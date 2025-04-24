@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<pretext xmlns:xi="http://www.w3.org/2001/XInclude">
+  <book xml:id="main">
+    <title>Data Wrangling, Data Management and Web Services</title>
+    <chapter xml:id="ch-week-1">
+      <title>Week 1</title>
+      <section xml:id="sec-week-1-day-1">
+        <title>Day 1 Monday</title>
+        <p>
+        <ul>
+          <li>Data formats: Structured vs unstructured, text vs binary, hierarchical vs tabular, CSV, JSON, YAML, XML, HTML</li>
+          <li>Text encodings, ASCII, Unicode</li>
+          <li>Activity: `hexdump`, utf-8 vs utf-16, le vs be etc</li>
+          <li>Basic Python representations of data: Lists, Tuples, Dictionaries</li>
+          <li>Activity: Read CSV data, write CSV data (three forms of representation)</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-1-day-2">
+        <title>Day 2 Tuesday</title>
+        <p>
+        <ul>
+          <li>Python tools: Generators, list comprehensions, generator comprehensions</li>
+          <li>Reading and writing JSON and YAML</li>
+          <li>Activity: working with JSON data</li>
+          <li>HTTP protocol, `httpx`</li>
+          <li>Activity: HTTP interactions</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-1-day-3">
+        <title>Day 3 Wednesday</title>
+        <p>
+        <ul>
+          <li>More HTTP</li>
+          <li>RESTful APIs</li>
+          <li>Activity: Interacting with RESTful APIs</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-1-day-4">
+        <title>Day 4 Thursday</title>
+        <p>
+        <ul>
+          <li>Database basics, Relational vs non-relational</li>
+          <li>SQL basics</li>
+          <li>Activity: SQLite3</li>
+          <li>SQL advanced: joins, where</li>
+          <li>Activity: SQL advanced 1</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-1-day-5">
+        <title>Day 5 Friday</title>
+        <p>
+        <ul>
+          <li>SQL advanced: normalization</li>
+          <li>SQL advanced: indexes, subqueries</li>
+          <li>Activity: SQL advanced 2</li>
+          <li>Week 1 wrap-up</li>
+        </ul>
+        </p>
+      </section>
+    </chapter>
+    <chapter xml:id="ch-week-2">
+      <title>Week 2</title>
+      <section xml:id="sec-week-2-day-1">
+        <title>Day 1 Monday</title>
+        <p>
+        <ul>
+          <li>olap vs oltp</li>
+          <li>duckdb</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-2-day-2">
+        <title>Day 2 Tuesday</title>
+        <p>
+        <ul>
+          <li>Distributed databases: replication, sharding, read/write consistency</li>
+          <li>Activity: live people demonstration</li>
+          <li>CAP theorem, BASE vs ACID</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-2-day-3">
+        <title>Day 3 Wednesday</title>
+        <p>
+        <ul>
+          <li>SQLAlchemy</li>
+          <li>Activity: SQLAlchemy</li>
+          <li>ORM</li>
+          <li>Activity: ORM</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-2-day-4">
+        <title>Day 4 Thursday</title>
+        <p>
+        <ul>
+          <li>Pandas, Numpy</li>
+          <li>Activity: Pandas, Numpy</li>
+          <li>Activity: Duckdb with Pandas</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-2-day-5">
+        <title>Day 5 Friday</title>
+        <p>
+        <ul>
+          <li>Non-relational databases: MongoDB</li>
+        </ul>
+        </p>
+      </section>
+    </chapter>
+    <chapter xml:id="ch-week-3">
+      <title>Week 3</title>
+      <section xml:id="sec-week-3-day-1">
+        <title>Day 1 Monday</title>
+        <p>
+        <ul>
+          <li>Non-relational databases: Neo4j</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-3-day-2">
+        <title>Day 2 Tuesday</title>
+        <p>
+        <ul>
+          <li>Security: Generals, C-I-A, Authorization vs Authentication</li>
+          <li>Practical Cryptography</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-3-day-3">
+        <title>Day 3 Wednesday</title>
+        <p>
+        <ul>
+          <li>Web Scraping, Beautiful Soup</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-3-day-4">
+        <title>Day 4 Thursday</title>
+        <p>
+        <ul>
+          <li>OAuth 2</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-3-day-5">
+        <title>Day 5 Friday</title>
+        <p>
+        <ul>
+          <li>Wrap-up</li>
+        </ul>
+        </p>
+      </section>
+    </chapter>
+    <chapter xml:id="ch-week-4">
+      <title>Week 4</title>
+      <section xml:id="sec-week-4-day-1">
+        <title>Day 1 Monday</title>
+        <p>
+        <ul>
+          <li>CS229: Data transformations, aggregation</li>
+          <li>CS328: Web servers: Flask</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-4-day-2">
+        <title>Day 2 Tuesday</title>
+        <p>
+        <ul>
+          <li>CS229: Data transformation: pivoting, reshaping, joining datasets</li>
+          <li>CS328: Web servers: Flask testing</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-4-day-3">
+        <title>Day 3 Wednesday</title>
+        <p>
+        <ul>
+          <li>Project work</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-4-day-4">
+        <title>Day 4 Thursday</title>
+        <p>
+        <ul>
+          <li>Project work</li>
+        </ul>
+        </p>
+      </section>
+      <section xml:id="sec-week-4-day-5">
+        <title>Day 5 Friday</title>
+        <p>
+        <ul>
+          <li>Project work</li>
+        </ul>
+        </p>
+      </section>
+    </chapter>
+  </book>
+</pretext>
