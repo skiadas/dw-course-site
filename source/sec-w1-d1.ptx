@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-1-day-1" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Monday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>Data formats: Structured vs unstructured, text vs binary, hierarchical vs tabular, CSV, JSON, YAML, XML, HTML</li>
+        <li>Text encodings, ASCII, Unicode</li>
+        <li>Activity: hex dump, utf-8 vs utf-16, le vs be etc</li>
+        <li>Basic Python representations of data: Lists, Tuples, Dictionaries</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w1-d1-data-formats.ptx" />
+  <xi:include href="sub-w1-d1-intro-python.ptx" />
+  <xi:include href="sub-w1-d1-reading-questions.ptx" />
+</section>

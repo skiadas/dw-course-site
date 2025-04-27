@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-intro-python">
+  <title>Some Python basics</title>
+  <introduction>
+    <p>In this section we will review some of the key Python data structures and describe suitable uses for them. This is not meant to be a complete introduction to Python, but only a refresher of some key ideas, with an emphasis on how information may be stored in Python and the consequences of different storage decisions. </p>
+    <p>We will see one new element, how we can add <term>typing specifications</term> to Python, so we can prevent some types of mistakes.</p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-typed-python">
+    <title>Typed Python</title>
+    <p>In modern versions of Python you can specify the types of variables or parameters. Let's take a look at the following code:</p>
+    <program language="python">
+      a : int = 5
+      b : str = 5  # this is an error
+
+      def f(x: int) -> int:
+        return x + 2
+
+      f(5)   # fine
+      f(b)   # an error
+      c: str = f(5)   # Also an error
+    </program>
+    <p>Notice the new so-called <term>type annotations</term>, where we specify that the variables <c>a</c> and <c>b</c> should be of types <c>int</c> and <c>string</c> respectively, and the function <c>f</c> needs to be called with an integer argument, and returns an integer value. Python can recognize these annotations and help you when editing a file, to avoid performing operations that would result in an error. For example, it will indicate that calling a function with a string argument is a mistake, as well as assigning the return value, which is an int, to a string variable.</p>
+    <p>Here's a <url href="https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html">great reference</url> for the basics of typing in Python.</p>
+  </subsubsection>
+  <subsubsection xml:id="subsub-python-lists">
+    <title>Lists</title>
+    <p>
+      Regardless of the programming language of choice, there are some common types used when representing data. They come in two flavors:
+      <ul>
+        <li>
+          <p>Basic types for representing character <em>strings</em>, <em>numbers</em>, <em>dates</em> (some times), <em>boolean</em> values.</p>
+        </li>
+        <li>
+          <p>Compound/Container types that can hold many values. The three most important compound types are <em>lists</em>, <em>tuples</em> and <em>dictionaries</em> (often also called <em>maps</em>). Understanding what each of these does and when it is suitable is an important distinction.</p>
+        </li>
+      </ul>
+    </p>
+      <p>We will start with lists. Chances are you are already quite familiar with lists.
+        <ul>
+          <li>A list contains zero or more elements in a sequence. They can contain an arbitrary number of elements.</li>
+          <li>We can iterate over the elements of a list with a <c>for-in</c> loop. Or we can access a specific location if we know its index.</li>
+          <li>A list can in theory contain arbitrary elements, though in practice all elements we put in a list will be of the same type (e.g. all numbers).</li>
+          <li>We can create a list with the literal notation like <c>[2, 5, 6]</c> or starting with an empty list like <c>list()</c>.</li>
+          <li>We can use indexing like <c>x[2]</c> to get at a value in the list (indices start at 0).</li>
+          <li>We can add elements to a list using <c>append</c>.</li>
+        </ul>
+      </p>
+      <p>As a simple example, we could have a list containing the names of all teams in our conference (data obtained from <url href="http://www.heartlandconf.org/">http://www.heartlandconf.org/</url>):</p>
+      <program language="python">
+      teams : list[str] = ["HANOVER", "MOUNT ST. JOSEPH", "ROSE-HULMAN",
+              "TRANSYLVANIA", "ANDERSON", "BLUFFTON",
+              "FRANKLIN", "EARLHAM", "MANCHESTER", "DEFIANCE"]
+      teams[2]   # Rose-Hulman
+      teams[2:4] # A "slice" of entries 2 through 4
+
+      for team in teams:
+          print(team)
+
+      # Creating a new empty list then copying the elements over
+      # This is meant as an example. Do NOT copy lists this way.
+      # Use teams.copy() instead.
+      teamsCopy : list[str] = list()
+      for team in teams:
+          teamsCopy.append(team)
+    </program>
+    <p>Notice how we added the "type annotation" for the list of strings, <c>list[str]</c>.</p>
+    </subsubsection>
+    <subsubsection xml:id="subsubsec-python-tuples">
+      <title>Tuples</title>
+      <p>May not have used tuples before, but they are quite useful in putting together heterogeneous but coupled elements.
+        <ul>
+          <li>A tuple is a sequence of values that has a <em>fixed</em> number of elements, often called its <em>arity</em>.</li>
+          <li>The elements in the tuple can be of any type.</li>
+          <li>A tuple is <q>immutable</q>. We cannot add elements to it or change existing elements.</li>
+          <li>Tuples are formed by using parentheses around a set of values separated by commas. For instance: <c>t=("HANOVER", 14, 4)</c></li>
+          <li>We can access an element in a tuple using index notation: <c>t[0]</c>.</li>
+          <li>We can also assign all tuple values to variables at once using multiple assignment, as in the example below.</li>
+        </ul>
+      </p>
+      <program language="python">
+      t : tuple[str, int, int] = ("HANOVER", 14, 4)
+      t[0]   # "HANOVER", known to be a string
+      (name, wins, losses) = t  # multiple assignment
+      name, wins, losses = t    # also works
+      </program>
+      <p>As a longer example, we could combine lists and tuples. For example we may have a list of tuples, and process it in a for-in loop with multiple assignment:</p>
+      <program language="python">
+      results : list[tuple[str, int, int]] = [
+          ("HANOVER", 14, 4), ("MOUNT ST. JOSEPH", 14, 4), ("ROSE-HULMAN", 14, 4),
+          ("TRANSYLVANIA", 12, 6), ("ANDERSON", 9, 9), ("BLUFFTON", 8, 10),
+          ("FRANKLIN", 7, 11), ("EARLHAM", 6, 12), ("MANCHESTER", 4, 14),
+          ("DEFIANCE", 2, 16)
+      ]
+
+      for team, wins, losses in results:
+          print("%s: %d Wins, %d Losses" % (team, wins, losses))
+      # Alternative:
+      for t in results:
+          print("%s: %d Wins, %d Losses" % t)
+    </program>
+      <p>Notice the expression <c>"%s: %d Wins, %d Losses" % t</c> in the contents of the print statement. This is the use of the percent operator for doing <term>string formatting</term>. It has the general form: <c>string % values</c> where <c>values</c> is a tuple of values whose arity matches the placeholders in the string. Read more about it and other formats in the <url href="https://docs.python.org/3.1/tutorial/inputoutput.html#fancier-output-formatting">input/output</url> section of the Python tutorial.</p>
+    <exercise>
+      <p>Create a list of tuples, where each tuple contains a string and a float. The string is a letter grade and the float is the corresponding point value. For example one entry would be <c>("A-", 3.67)</c>. Also create a function that given a letter grade looks through the list in search of the letter grade, and returns the corresponding number. <em>Make sure your list and your function are TYPED</em>.</p>
+    </exercise>
+    </subsubsection>
+    <subsubsection xml:id="subsub-dictionaries">
+      <title>Dictionaries/Maps</title>
+      <p>A <em>dictionary</em>, often referred to also as a <em>map</em>, is a structure that associates <q>keys</q> with <q>values</q>.
+        <ul>
+          <li>Each key has a unique value corresponding to it.</li>
+          <li>Any immutable type can be used as a key. It is common to use strings.</li>
+          <li>You can create a dictionary via its literal expression: <c>{ key1: value1, key2: value2 }</c></li>
+          <li>You can create an empty dictionary with <c>dict()</c>.</li>
+          <li>Elements can be accessed by key indexing, like so: <c>x["foo"]</c>.</li>
+          <li>You can also iterate over the keys and values.</li>
+          <li>You can check for the presence of a key in a dictionary with the form: <c>key in dict</c></li>
+          <li>You can update the value for a given key or add a new key to a dictionary.</li>
+          <li>Typically the values in a dictionary are of the same type, but that is not a requirement.</li>
+        </ul>
+      </p>
+      <p>For example, we used a tuple earlier to represent the information of a team and their win and loss record. We could instead have used a dictionary:</p>
+      <program language="python">
+      team = { "name": "HANOVER", "wins": 14, "losses": 4 }
+      team["name"]     # "HANOVER"
+
+      # Iterate over the keys:
+      for key in team:
+          print(key, team[key])
+
+      # Iterate over key-value pairs:
+      for key, value in team.items():
+          print(key, value)
+    </program>
+    <p>Note that we did not add a dictionary type annotation, because it's a bit more complex and there are two choices. Essentially this is the same consideration of list vs tuple: A list can have any number of homogeneous things, while a tuple can have a specific number of heterogenous things. Thus we have for dictionaries:
+    <ul>
+      <li>Dictionary as a <term>key-value store</term>. What we mean here is that there is an arbitrary number of possible keys, and that each value is of the same type, for example always a float. For example a dictionary with keys the letter grades and values the corresponding points could be described with a type of <c>dict[str, float]</c>. So arbitrary many keys, homogeneous values.</li>
+      <li>On the other end of the spectrum we have a dictionary as a <term>object</term>. In that situation we have a specific set of keys, but each key can have a different value. So our team example above could be typed that way, by defining a new type as <c>Team = TypedDict("Team", {"name": str, "wins": int, "losses": int})</c>. This specifies the type for a dictionary that can have only 3 keys, where the key <c>name</c> has a string value while the keys <c>wins</c> and <c>losses</c> have int values. We could have used that type then by saying <c>team : Team = ...</c>. One caveat: We need to import this type: <c>from typing import TypedDict</c>. So to sum up this case: <em>Fixed keys, heterogeneous values.</em></li>
+    </ul>
+    </p>
+      <p>As an further example, we could store the teams we worked with earlier in a dictionary, indexed by the team names:</p>
+      <program language="python">
+      results = {
+          "HANOVER": ("HANOVER", 14, 4),
+          "MOUNT ST. JOSEPH": ("MOUNT ST. JOSEPH", 14, 4),
+          "ROSE-HULMAN": ("ROSE-HULMAN", 14, 4),
+          "TRANSYLVANIA": ("TRANSYLVANIA", 12, 6),
+          "ANDERSON": ("ANDERSON", 9, 9),
+          "BLUFFTON": ("BLUFFTON", 8, 10),
+          "FRANKLIN": ("FRANKLIN", 7, 11),
+          "EARLHAM": ("EARLHAM", 6, 12),
+          "MANCHESTER": ("MANCHESTER", 4, 14),
+          "DEFIANCE": ("DEFIANCE", 2, 16)
+      }
+      results["HANOVER"]
+    </program>
+    <exercise>
+      <p>What would the type of the above dictionary be?</p>
+    </exercise>
+  </subsubsection>
+  <subsubsection xml:id="subsub-an-example">
+    <title>An example</title>
+    <p>As a motivating example, we will consider the following problem: We have stored the text from a certain book in a text file. We will use for our example a transcript of the <em>Tale of Two Cities</em> by Charles Dickens, which can be found in <url href="http://www.textfiles.com/etext/FICTION/2city10.txt">this file</url> provided by the <url href="http://www.textfiles.com/etext/"><q>E-Texts</q> website</url>. We would like to process it in a way that would facilitate answering some questions. For example:</p>
+    <p>
+      <ul>
+        <li>How many words and how many paragraphs are there in the text?</li>
+        <li>What words are the most frequent and how often do they appear?</li>
+        <li>Same question but for each chapter.</li>
+        <li>What are all the places where a specific word appears in the text?</li>
+        <li>How often does a specific pair of words appear in the same paragraph?</li>
+        <li>Which pairs of words appear most often in the same paragraph?</li>
+      </ul>
+    </p>
+    <exercise>
+      <p>Imagine that you read the text from this book into a string or something like that, then you process it picking apart the words, new lines etc. The question below is about this resulting structure:</p>
+      <p>How would you represent the contents of this book in Python to facilitate answering these questions, using the data structures described above? Present at least three different approaches and discuss advantages and disadvantages of each. Some approaches might make some of the questions easier but other questions harder.</p>
+    </exercise>
+  </subsubsection>
+  <exercises xml:id="exercises-intro-python">
+  <exercisegroup>
+    <title>Practice: Processing GPAs</title>
+    <introduction>
+      <p>The following set of exercises is meant to work with the following list of course grades:</p>
+      <program language="python">
+        grades : list[tuple[str, str, str]] = [
+            ("Fall 2023", "MATH 101", "A"),
+            ("Fall 2023", "CS 102", "B+"),
+            ("Fall 2023", "ENGL 210", "C"),
+            ("Fall 2023", "HIST 150", "B"),
+            ("Fall 2023", "CHEM 105", "C+"),
+            ("Spring 2024", "PHYS 110", "B-"),
+            ("Spring 2024", "CS 202", "A-"),
+            ("Spring 2024", "BIO 120", "C"),
+            ("Spring 2024", "PHIL 101", "B"),
+            ("Spring 2024", "ECON 200", "C-"),
+            ("Summer 2024", "STAT 201", "C+"),
+            ("Summer 2024", "CS 250", "A"),
+            ("Summer 2024", "ART 100", "B"),
+            ("Summer 2024", "PSYC 101", "C"),
+            ("Summer 2024", "MUSC 110", "B+"),
+            ("Fall 2024", "CS 301", "A"),
+            ("Fall 2024", "MATH 250", "B"),
+            ("Fall 2024", "ENGL 310", "C-"),
+            ("Fall 2024", "HIST 220", "B+"),
+            ("Fall 2024", "CHEM 205", "C"),
+        ]
+      </program>
+      <p>
+        All the functions you create should be <em>TYPED</em>, specifying the types of their parameters as well as their return type.
+      </p>
+    </introduction>
+    <exercise xml:id="exer-practice-python-1">
+      <p>Write a function that given a list of grades like above generates the student's GPA. It would be helpful to keep track of a <c>tuple[int, int]</c> which contains the number of courses and the total points, in a tuple, then updates this tuple as you loop through the list. Then you can produce the GPA by dividing the two.</p>
+    </exercise>
+    <exercise xml:id="exer-practice-python-2">
+      <p>Write another function that does the same thing but with separate gpas per term. You should use a dictionary with keys the term name and values the "course-count, point-total" tuples that you used in the previous exercise. So the type of this dictionary would be <c>dict[str, tuple[int, int]]</c>. The return value of your function should be this dictionary.</p>
+    </exercise>
+    <exercise xml:id="exer-practice-python-3">
+      <p>Write another function that takes as input the dictionary your previous function created, and prints out a report with one row per term, showing the term, number of courses and gpa.</p>
+    </exercise>
+  </exercisegroup>
+  <exercise>
+    <p>The following lines of code will load into the variable <c>info</c> the information you can see if you visit <url href="https://unicode-api.aaronluna.dev/v1/characters?limit=80&amp;starting_after=0x1F5FF">this webpage</url> </p>
+    <program language="python"><![CDATA[
+    import httpx
+    info = httpx.get(
+        "https://unicode-api.aaronluna.dev/v1/characters?limit=80&starting_after=0x1F5FF"
+    ).json() ]]>
+    </program>
+    <p>This is going to be a dictionary with a key <c>data</c> whose value is a list. Each entry of that list is a dictionary with keys for a unicode element's <c>character</c>, <c>name</c> and <c>codepoint</c>. Print this list out with one element per row, showing the codepoint first, followed by the actual character followed by its name.</p>
+    <p>You may experiment with different sets of characters by changing the <c>1F5FF</c> part in the URL.</p>
+  </exercise>
+  </exercises>
+</subsection>

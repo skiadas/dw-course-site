@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-1-day-4" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Thursday</title>
+  <p>
+    <ul>
+      <li>Database basics, Relational vs non-relational</li>
+      <li>SQL basics</li>
+      <li>Activity: SQLite3</li>
+      <li>SQL advanced: joins, where</li>
+      <li>Activity: SQL advanced 1</li>
+    </ul>
+  </p>
+</section>

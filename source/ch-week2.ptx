@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chapter xml:id="ch-week-2" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Week 2</title>
+  <section xml:id="sec-week-2-day-1">
+    <title>Monday</title>
+    <p>
+      <ul>
+        <li>olap vs oltp</li>
+        <li>duckdb</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-2-day-2">
+    <title>Tuesday</title>
+    <p>
+      <ul>
+        <li>Distributed databases: replication, sharding, read/write consistency</li>
+        <li>Activity: live people demonstration</li>
+        <li>CAP theorem, BASE vs ACID</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-2-day-3">
+    <title>Wednesday</title>
+    <p>
+      <ul>
+        <li>SQLAlchemy</li>
+        <li>Activity: SQLAlchemy</li>
+        <li>ORM</li>
+        <li>Activity: ORM</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-2-day-4">
+    <title>Thursday</title>
+    <p>
+      <ul>
+        <li>Pandas, Numpy</li>
+        <li>Activity: Pandas, Numpy</li>
+        <li>Activity: Duckdb with Pandas</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-2-day-5">
+    <title>Friday</title>
+    <p>
+      <ul>
+        <li>Non-relational databases: MongoDB</li>
+      </ul>
+    </p>
+  </section>
+</chapter>

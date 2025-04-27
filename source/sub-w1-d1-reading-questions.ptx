@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<reading-questions xml:id="rqs-day-1">
+  <exercise>
+    <p>What are some examples of image formats you are familiar with?</p>
+  </exercise>
+  <exercise>
+    <p>Can we store an image in a JSON file? How? (Hint: Look up base64 encoding)</p>
+  </exercise>
+  <exercise>
+    <p>Hiragana is a Japanese script that can be found as part of the <url href="https://www.compart.com/en/unicode/plane">Basic Multilingual Plane</url>. How many bytes do we need to represent each of those characters in UTF-8? What about UTF-16?</p>
+    <p>What about greek characters?</p>
+  </exercise>
+  <exercise>
+    <p>Why doesn't UTF-8 have a concept of little-endian vs big-endian?</p>
+  </exercise>
+  <exercise>
+    <p>What combination of Python structures would you use to represent the following:
+      <ul>
+        <li>The days of the week</li>
+        <li>The months along with the number of days each month has</li>
+        <li>A time of the day (as hours and minutes)</li>
+        <li>A recipe</li>
+        <li>All the different clubs on campus along with the members of each club</li>
+      </ul>
+    </p>
+  </exercise>
+</reading-questions>

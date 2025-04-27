@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chapter xml:id="ch-week-4" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Week 4</title>
+  <section xml:id="sec-week-4-day-1">
+    <title>Monday</title>
+    <p>
+      <ul>
+        <li>CS229: Data transformations, aggregation</li>
+        <li>CS328: Web servers: Flask</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-4-day-2">
+    <title>Tuesday</title>
+    <p>
+      <ul>
+        <li>CS229: Data transformation: pivoting, reshaping, joining datasets</li>
+        <li>CS328: Web servers: Flask testing</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-4-day-3">
+    <title>Wednesday</title>
+    <p>
+      <ul>
+        <li>Project work</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-4-day-4">
+    <title>Thursday</title>
+    <p>
+      <ul>
+        <li>Project work</li>
+      </ul>
+    </p>
+  </section>
+  <section xml:id="sec-week-4-day-5">
+    <title>Friday</title>
+    <p>
+      <ul>
+        <li>Project work</li>
+      </ul>
+    </p>
+  </section>
+</chapter>

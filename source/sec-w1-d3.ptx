@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-1-day-3" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Wednesday</title>
+  <p>
+    <ul>
+      <li>More HTTP</li>
+      <li>RESTful APIs</li>
+      <li>Activity: Interacting with RESTful APIs</li>
+    </ul>
+  </p>
+</section>

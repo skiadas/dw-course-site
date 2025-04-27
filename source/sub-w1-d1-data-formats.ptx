@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<subsection xml:id="subsec-data-formats">
+    <title>Data formats</title>
+    <introduction>
+      <p>Information comes in all sorts of forms. It could be a carefully arranged table of values, a text file containing Shakespeare's works, an image file of a road intersection, or an audio file of someone's speech.</p>
+      <p>In order to read, write or generally process such information, there are a number of considerations:</p>
+      <p>
+        <ul>
+          <li>
+            <p><term>Communication</term> with the data source or target. This typically involves some established data transmission protocol, for instance HTTP which we will touch on later. It may also include questions of authentication and authorization, as well as security, confidentiality and integrity. We will discuss all these topics at a later day.</p>
+            <p>
+              <ul>
+                <li>
+                  <p><term>Authentication</term> establishes that the requester is who they say they are.</p>
+                </li>
+                <li>
+                  <p><term>Authorization</term> establishes whether the requester has the necessary credentials to access the given resource.</p>
+                </li>
+              </ul>
+            </p>
+          </li>
+          <li>
+            <p>The <term>encoding</term> for the communication of the data. The data we want to transfer is almost invariably text of some sort, but what we transmit is binary information. There are numerous encodings that turn this binary information into text and back, and even though some are established standards, one needs to pay attention to the individual encoding in question for their particular case.</p>
+            <p>Or we may in fact be communicating non-textual information, e.g. an image. There are numerous ways we could encode the information in an image. Same with sound.</p>
+          </li>
+          <li>
+            <p>The <term>format</term> of the data. This is a detailed description of how the textual information that was transmitted is to be interpreted. In other words, how are we to turn this string of text into a meaningful object? We will spend some time looking at the most common formats.</p>
+          </li>
+        </ul>
+      </p>
+      <p>We will discuss the question of communication later on. For now we will briefly discuss encodings, and will spend most of our time discussing formats.</p>
+    </introduction>
+    <subsubsection xml:id="sub-character-encoding">
+      <title>Character Encoding</title>
+      <p>Character encodings allow us to associate characters to numbers that can then be stored in a computer.</p>
+      <p>One of the earliest standards in that regard is <acro>ASCII</acro> (American Standard Code for Information Interchange), which represents 128 different characters with 7 bits. That space is enough to fit both lowercase and uppercase letters of the alphabet, as well as numbers and most common punctuation marks. It also includes a number of common <q>control codes</q> to describe key operations, like <q>carriage return</q> and <q>new line</q> for starting a new line, or a control code for <q>backspace</q>. Effectively every time you type something in your keyboard, it gets converted to a corresponding ASCII character. Here is a <url href="https://www.ascii-code.com/">table of ASCII values</url>, for reference.</p>
+      <p>In Python, you can use the functions <c>ord</c> and <c>chr</c> to go back and forth between an ASCII character and its corresponding number. For example, the character <c>a</c> corresponds to the number 97, often written in hexadecimal form as <c>0x61</c>:</p>
+      <program language="python">
+          ord('a')             # 97
+          0x61                 # 97
+          chr(97)              # 'a'
+          chr(ord('a') + 3)    # 'd'
+          for i in range(0,26):
+            print(chr(97 + i))
+      </program>
+      <p>On the command line, you can use the <c>xxd</c> command to convert back and forth between "normal" characters and their hexadecimal representations. Every hex digit corresponds to 4 bits, and so two hex digits together form a byte. Here's an example:</p>
+      <program language="shell">
+        echo -n "hello"      | xxd -p     # turn string "hello" to hex
+        echo -n "68656c6c6f" | xxd -p -r  # turn hex to text
+      </program>
+      <exercise>
+        <p>Write the hex code that would produce your first and last names, but on two separate lines (you need to find the hex code for "newline")</p>
+      </exercise>
+      <p>Even though this encoding standardized matters for a little while, it was very limited as computers spread around the world. There was a need to accommodate various languages and alphabets, and the 128 characters of ASCII were terribly insufficient. A number of encodings evolved at this time, each extending the ASCII encoding in some way, many simply by the addition of one more bit for a total of 256 different characters and 128 new characters, enough to accommodate the alphabet of a new language. If you search for various encodings online, you will see the proliferation of possible encoding formats. This was clearly a nightmare in terms of communication. The same file when opened in a computer in France might look very different compared to the same file opened in a computer in Germany under a different encoding.</p>
+      <exercise>
+        <p>Try this out: Use the following command to write a set of non-standard ASCII character into a file called <c>test.txt</c>, then open that file and change its encoding from the bottom tab (it would say "UTF-8" to start)</p>
+        <program language="$">
+          echo -n "f8f5ecfcdf" | xxd -p -r &gt; test.txt
+        </program>
+      </exercise>
+      <p>Around 1988 efforts to provide a unified access to all the world's alphabets started, and evolved into what we now know as Unicode and its various encodings. The <term>Unicode</term> standard describes <q>codes</q> (numbers) for over 128,000 characters, including most of the world's alphabets as well as numerous special symbols from currency to emojis. The representation has room for more characters in the future, and various committees are working on doing just that (see for instance <url href="http://unicode.org/emoji/charts/full-emoji-list.html">Unicode emoji</url> and the <url href="https://www.compart.com/en/unicode/block/U+1F600">Emoticons block</url>). Here is a <url href="https://www.compart.com/en/unicode/">general useful reference for all things Unicode</url>.</p>
+      <exercise>
+        <p>The unicode space uses 21 bits. How many different characters can it represent?</p>
+      </exercise>
+      <p>The codes are organized in <url href="https://www.compart.com/en/unicode/plane">17 planes</url>, each plane having room for <m>2^{16}=65536</m> characters. The first of these, represented by the codes that have the first 5 bits all set to 0, is called the <url href="https://www.compart.com/en/unicode/plane/U+0000">Basic Multilingual Plane</url> and it contains characters sufficient to represent most modern languages.</p>
+      <p>
+        These <q>codes</q> are <em>abstract</em>, and can then be mapped in a variety of ways into actual bytes, which can then be transmitted between computers. This is achieved in a variety of ways, referred to as <term>Unicode Transfer Formats</term> (<acro>UTF</acro>). The main formats used are:
+        <ul>
+          <li><term>UTF-8</term> which represents most codes using 8 bits (1 byte), but may use up to 4 bytes for some more obscure codes.</li>
+          <li><term>UTF-16</term> which represents most codes using 16 bits (2 bytes) but may use 4 bytes for some codes.</li>
+          <li><term>UTF-32</term> which always represents codes using 32 bits (8 bytes).</li>
+        </ul>
+        The most common of these formats by far is UTF-8. Some if its key features are:
+      </p>
+      <p>
+        <ul>
+          <li>It uses only 1 byte to represent all ASCII characters. In that sense it is a strict extension of ASCII and can accommodate all ASCII documents without change.</li>
+          <li>It uses 2 bytes for most common language alphabets, covering 1920 different characters and accommodating most common usages.</li>
+          <li>It uses 3 bytes for some of the more extended alphabets, including all Chinese, Japanese and Korean characters.</li>
+          <li>4 bytes are used for other symbols, for instance numerous mathematical symbols, emojis, other notations.</li>
+          <li>You can find more specifics on <url href="https://en.wikipedia.org/wiki/UTF-8#Description">this wikipedia page</url></li>
+        </ul>
+      </p>
+      <p>UTF-8 is by far the most commonly used encoding. Almost every resource you find will be in that format, including over 90% of webpage content. But it is important to be aware of the alternatives.</p>
+      <p>In Python, <c>chr</c> (or <c>unichr</c> on version 2), can return the unicode character represented by a given number:</p>
+      <program language="python">
+        chr(0x2194)    # returns a double-sided arrow symbol.
+        chr(0x1f600)   # smile!
+      </program>
+      <p>In general, in Python 3 all strings are automatically considered to be in unicode encoding, more specifically UTF-8. But when reading from a file, it is still often required that you specify the encoding to be used.</p>
+      <exercise>
+        <p>
+          Let's take a practical look at this. Make a file <c>test.txt</c> (or reuse the one from earlier) and make sure it has the UTF-8 encoding and it contains the test <c>hello</c>.
+          <ol>
+            <li>The following command should print out its representation: <c>xxd -p -c 4 test.txt -</c> (note the dash at the end). You should see the familiar ASCII representation from before, but a bit more spaced out to make it easier to read.</li>
+            <li>Pick your favorite emoji from <url href="https://www.compart.com/en/unicode/block/U+1F900">this page</url>, copy the actual page and paste in the text file, then repeat the above command. You should find 4 bytes (8 hex digits) that represent it. Compare the values you see with the <q>UTF-8 Encoding</q> entries in the emoji's page.</li>
+            <li>Change the file's encoding (choosing the "save with encoding option") to UTF-16 BE, and run the command again. You should see a couple of things. first, the initial bytes are <c>feff</c>. This is known as a Byte-Order-Mark (BOM). It is often used in 16-bit representations to indicate what is known as the <term>endianness</term>. Effectively, two bytes (16 bits) in memory can appear in one of two forms: <em>big endian</em>, with the <q>most significant byte first</q> and <em>little endian</em>, with the <q>least significant byte first</q>. What this means in practice is that as we read big-endian data, it reads the way we expect it, but if it's little-endian then we have to reverse the bytes. As an example, after the BOM mark you should be finding the UTF-16 encoding of the letter <sq>h</sq>. In big-endian (BE) you will find that to be <c>0068</c>, but in little-endian (LE) it would have been <c>6800</c>. The byte-order-mark at the beginning is telling whoever reads the file that they should read it in big-endian form. If it was <c>fffe</c> it would have suggested little-endian form.</li>
+            <li>Look for the bytes representing your emoji, there should be a set of 4 bytes, matching the <q>UTF-16 Encoding:</q> entry in the emoji's webpage.</li>
+            <li>Save the file as little-endian (UTF-16 LE) and run the command again, and try to identify each character as well as your emoji. Note that the 4 bytes of the emoji have been pairwise swapped: The first 2 bytes are in opposite order and the next two bytes are in opposite order, but the first 2 bytes still precede the next two bytes.</li>
+            <li>Open the file as big-endian and see what happens.</li>
+          </ol>
+        </p>
+      </exercise>
+    </subsubsection>
+    <subsubsection xml:id="subsub-data-formats">
+      <title>Data Formats</title>
+      <p>The resulting textual data might be in any number of different formats. Being able to read and process all (most) of these formats is paramount, and most programming languages offer ready access via numerous libraries. Here is just a small collection of the different formats that your data might come in:
+      <ul>
+        <li><term>Binary:</term> While we will discuss mostly text formats, it is worth mentioning that, especially in the past, data was often communicated via an ad-hoc, often proprietary, format that is rarely human-readable. This was done partly to save space, but the practice is somewhat more rare nowadays. Most image data is still communicated in this form however. Try to open an image file in your favorite text editor one day. Excel files used to follow such a binary format until recent years, when an XML format started being in use (the <c>xlsx</c> extension).</li>
+        <li><term>Text:</term> Oftentimes our <q>data</q> is purely textual, without any particular <em>structure</em>, and calling on further analysis. For example they might be a book or poem, a contract, transcripts of a conversation etc. Textual data can appear in any number of formats, from a Word document (docx format) to a plain text file (txt) to the Markdown and RestructuredText formats that allow some semantic markup of the plain text. We will probably not look much into these. Many modern AI technologies are based around the idea of manipulating such textual data.
+        </li>
+        <li><term>CSV</term> A popular tabular data format is the so-called <q>comma-separated-format</q>. Information is written in rows, with individual entries in a row separated by a comma. Double quotes are typically used to identify strings and to allow a comma to appear in the middle of an entry. Tabular data in Excel can be exported in this form.
+        </li>
+        <li><term>HTML</term> Quite often our data is actually the information in a web page document. We'll learn ways to delve into such a document and extract key pieces of information, a process called <term>Web scraping</term>.</li>
+        <li><term>XML</term> A fairly popular structured data format where tags are used, similar to HTML, to convey information.</li>
+        <li><term>JSON</term> A popular loosely-structured data transmission format, inspired by Javascript's syntax for objects. It is extensively used these days, and we will now delve more into it.</li>
+      </ul>
+      </p>
+      <p>We will focus on JSON and XML, as these are two of the most popular transmission formats. They are both used to represent hierarchical structures. JSON stands for <q>JavaScript Object Notation</q>, and it is fairly simple. Here is an example JSON document returned from a search query to Twitter:</p>
+      <program language="json"><![CDATA[
+        {
+          "search_metadata": {
+            "completed_in": 0.032,
+            "count": 15,
+            "max_id": 773149726313099268,
+            "max_id_str": "773149726313099268",
+            "next_results": "?max_id=771520407623139328&ampq=%40HanoverCollege&amp;include_entities=1",
+            "query": "%40HanoverCollege",
+            "refresh_url": "?since_id=773149726313099268&ampq=%40HanoverCollege&amp;include_entities=1",
+            "since_id": 0,
+            "since_id_str": "0"
+          },
+          "statuses": [
+            {
+              "contributors": null,
+              "coordinates": null,
+              "created_at": "Tue Sep 06 13:23:53 +0000 2016",
+              "entities": {
+                "hashtags": [],
+                "symbols": [],
+                ...
+              },
+              ...
+            },
+            ...
+          ]
+        }]]>
+      </program>
+      <p>Briefly:</p>
+      <p>
+        <ul>
+          <li>
+            <p>A JSON document consists of an <q>object</q>, indicated by an open-close pair of curly braces.</p>
+          </li>
+          <li>
+            <p>The object consists of a series of key-value pairs, where the key is some string in quotes, and the value can be:</p>
+            <p>
+              <ul>
+                <li>the keyword <c>null</c></li>
+                <li>a number, string, or boolean</li>
+                <li>an array indicated by square brackets, whose elements are in turn any of the types listed here</li>
+                <li>another object</li>
+              </ul>
+            </p>
+          </li>
+        </ul>
+      </p>
+      <p>In the above example, we see that the top level object contains two entries, with keys <q>search_metadata</q> and <q>statuses</q>. The former's value is an object, and the latter's value is an array.</p>
+      <p>And that's it! The format is intentionally kept simple. For an application to make use of such information, it would need to know what the possible keys are and what the corresponding values mean. This is often described as the API. Twitter's API describes all these entries in detail. It is worth a look. We will examine it closely during our first lab assignment.</p>
+      <p>Those familiar with Javascript will recognize the above syntax, as we can create literal objects that way. And this is correct. JSON is however a bit more strict about the format.</p>
+      <exercise>
+       <p>Write a JSON object that contains the following:
+        <ul>
+          <li>Your email login.</li>
+          <li>Your first and last name.</li>
+          <li>Your year in college.</li>
+          <li>A list of the courses you are enrolled in, each course containing the information of its department code, its number, its name, and your grade.</li>
+        </ul>
+      </p>
+    </exercise>
+      <p><term>XML</term>, standing for eXtensible Markup Language, was a major effort to standardize data description and transmission with a format similar to HTML.</p>
+      <p>
+        <ul>
+          <li>
+            <p>Open/Close tags are used to denote a nesting hierarchy.</p>
+          </li>
+          <li>
+            <p>The tag names are standardized to indicate specific meaning.</p>
+          </li>
+          <li>
+            <p>Attributes to each tag can enrich the provided information.</p>
+          </li>
+        </ul>
+      </p>
+      <p>Here is a sample XML file, taken from <url href="https://msdn.microsoft.com/en-us/library/ms762271(v=vs.85).aspx">here</url>:</p>
+      <program language="xml">
+        &lt;?xml version="1.0"?&gt;
+        &lt;catalog&gt;
+          &lt;book id="bk101"&gt;
+              &lt;author&gt;Gambardella, Matthew&lt;/author&gt;
+              &lt;title&gt;XML Developer's Guide&lt;/title&gt;
+              &lt;genre&gt;Computer&lt;/genre&gt;
+              &lt;price&gt;44.95&lt;/price&gt;
+              &lt;publish_date&gt;2000-10-01&lt;/publish_date&gt;
+              &lt;description&gt;An in-depth look at creating applications
+              with XML.&lt;/description&gt;
+          &lt;/book&gt;
+          &lt;book id="bk102"&gt;
+              &lt;author&gt;Ralls, Kim&lt;/author&gt;
+              &lt;title&gt;Midnight Rain&lt;/title&gt;
+              &lt;genre&gt;Fantasy&lt;/genre&gt;
+              &lt;price&gt;5.95&lt;/price&gt;
+              &lt;publish_date&gt;2000-12-16&lt;/publish_date&gt;
+              &lt;description&gt;A former architect battles corporate zombies,
+              an evil sorceress, and her own childhood to become queen
+              of the world.&lt;/description&gt;
+          &lt;/book&gt;
+          &lt;book id="bk103"&gt;
+              &lt;author&gt;Corets, Eva&lt;/author&gt;
+              &lt;title&gt;Maeve Ascendant&lt;/title&gt;
+              &lt;genre&gt;Fantasy&lt;/genre&gt;
+              &lt;price&gt;5.95&lt;/price&gt;
+              &lt;publish_date&gt;2000-11-17&lt;/publish_date&gt;
+              &lt;description&gt;After the collapse of a nanotechnology
+              society in England, the young survivors lay the
+              foundation for a new society.&lt;/description&gt;
+          &lt;/book&gt;
+          &lt;book id="bk104"&gt;
+              &lt;author&gt;Corets, Eva&lt;/author&gt;
+              &lt;title&gt;Oberon's Legacy&lt;/title&gt;
+              &lt;genre&gt;Fantasy&lt;/genre&gt;
+              &lt;price&gt;5.95&lt;/price&gt;
+              &lt;publish_date&gt;2001-03-10&lt;/publish_date&gt;
+              &lt;description&gt;In post-apocalypse England, the mysterious
+              agent known only as Oberon helps to create a new life
+              for the inhabitants of London. Sequel to Maeve
+              Ascendant.&lt;/description&gt;
+          &lt;/book&gt;
+          ...
+        &lt;/catalog&gt;
+
+      </program>
+      <p>There are various documents describing what tags to use depending on the situation, and there are many standards that focus on particular usage. This is a topic we may revisit later. For now note that XML is somewhat more <q>verbose</q> than JSON, with the opening and closing of all tags. It also does not readily provide arrays, though the contents of a tag are in effect a sort of list. But at the same time it offers a more diverse way of associating tags/names to bits of information. For example the <c>id="..."</c> attributes used above are at a different level than the <c>author</c> tags below, they are literally a part of the opening tag. Under different conventions we could have written those instead as children tags like <c>&lt;id&gt;bk104&gt;&lt;/id&gt;</c>.</p>
+      <exercise>
+        <p>Write an XML that would represent the same information you wrote earlier for JSON.</p>
+      </exercise>
+    </subsubsection>
+  </subsection>

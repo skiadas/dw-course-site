@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-1-day-2" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Tuesday</title>
+  <p>
+    <ul>
+      <li>Python tools: Generators, list comprehensions, generator comprehensions</li>
+      <li>Reading and writing JSON and YAML</li>
+      <li>Activity: working with JSON data</li>
+      <li>HTTP protocol, `httpx`</li>
+      <li>Activity: HTTP interactions</li>
+    </ul>
+  </p>
+</section>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chapter xml:id="ch-week-1" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Week 1</title>
+  <xi:include href="sec-w1-d1.ptx" />
+  <xi:include href="sec-w1-d2.ptx" />
+  <xi:include href="sec-w1-d3.ptx" />
+  <xi:include href="sec-w1-d4.ptx" />
+  <xi:include href="sec-w1-d5.ptx" />
+</chapter>
