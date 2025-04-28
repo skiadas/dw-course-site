@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-python-tools-generators-comprehensions">
+  <title>Python tools: Generators and Comprehensions</title>
+  <introduction>
+    <p>
+      In this section we will discuss three useful Python tools:
+      <ul>
+        <li><term>List comprehensions</term> are an efficient way to process lists and produce new lists.</li>
+        <li><term>Generators</term> are functions that produce a (possibly infinite) sequence of values. They are an effective replacement for lists in many contexts where we don't need the entire list to exist at once, but merely need to process one element at a time.</li>
+        <li><term>Generator comprehensions</term> are basically list comprehensions that use a generator approach, never storing the entire contents in memory at once.</li>
+      </ul>
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-list-comprehensions">
+    <title>List Comprehensions</title>
+    <p>We'll start with list comprehensions. All list comprehensions have one thing in common: They take a list as input, and produce a list as output.</p>
+    <paragraphs xml:id="paragraph-simple-list-comprehensions">
+      <title>Simple list comprehensions</title>
+      <p>The simplest list comprehensions involve doing something simple with each element in the list. For instance if we have words, we could use a list comprehension to make them all uppercase:</p>
+      <program language="python">
+    words = ["The", "big", "bad", "Wolf"]
+    uppers = [ word.upper() for word in words ]
+  </program>
+      <p>Don't confuse the brackets in the second line with the literal list construction of the first line. The brackets on the second line form a <em>list comprehension</em>, which in its simplest form has the following shape (where the dots-bracketed elements are variable):</p>
+      <program language="python">
+    [..expression.. for ..x.. in ..list..]
+  </program>
+      <p>This syntax expresses that a new list should be created by evaluating the <c>expression</c> once for each possible value of <c>x</c> taken from the <c>list</c>.</p>
+      <p>Every list comprehension can be done via a <c>for-in</c> loop, just not as elegantly. So the above list comprehension could be written as:</p>
+      <program language="python">
+    uppers = []
+    for word in words:
+      uppers.append(word.upper())
+    </program>
+      <p>Whenever you see a list comprehension, it essentially corresponds to some analogous <c>for-in</c> expression.</p>
+      <p>Here is a variation that replaces each word with a pair of the word in capitals and its length:</p>
+      <program language="python">
+      words = ["The", "big", "bad", "Wolf"]
+      pairs = [
+        [word.upper(), len(word)]
+        for word in words
+      ]
+      # Reading back the lengths from those pairs:
+      lengths = [ p[1] for p in pairs ]
+    </program>
+      <exercise>
+        <p>Work the same thing out via a <c>for-in</c> loop</p>
+      </exercise>
+      <exercise>
+        <p>Write a list comprehension that produces all the squares of the numbers from 1 to 20.</p>
+      </exercise>
+      <p>List comprehensions are often just the first step in further processing. For example, we could use a list comprehension to get the lengths of the words in the list, then use the <c>sum</c> function to add up those lengths:</p>
+      <program language="python">
+      lengths = [len(word) for word in words]
+      totalLength = sum(lengths)
+    </program>
+    </paragraphs>
+    <paragraphs xml:id="paragraphs-filters">
+      <title>Filters</title>
+      <p>One neat feature of list comprehensions is that they allow you to filter the results in a suitable way. So imagine we wanted to collect all numbers from 1 to 20 that are odd, and square them. We could write:</p>
+      <program language="python">
+      numbers = []
+      for n in range(1, 21):
+        if n % 2 == 1:
+          numbers.append(n * n)
+    </program>
+      <p>Instead we could do this via a list comprehension:</p>
+      <program language="python">
+      numbers = [ n * n for n in range(1, 21) if n % 2 == 1 ]
+      # Or expanded:
+      numbers = [
+        n * n
+        for n in range(1, 21)
+        if n % 2 == 1
+      ]
+    </program>
+      <exercise>
+        <p>Write a list comprehension that returns all numbers from 1 to 100 that produce a remainder of 3 when divided by 13.</p>
+      </exercise>
+      <exercise>
+        <p>Write a list comprehension that is given a list of words and appends at the end of each word a space followed by the length. So the word <c>"art"</c> will become <c>"art 3"</c>.</p>
+      </exercise>
+      <exercise>
+        <p>A string can be used as the <q>list</q> in a list comprehension, and it will then be treated as a list of its characters. Use this idea to start from a string and return a list of the ASCII/UTF8 codes for the characters in the string.</p>
+      </exercise>
+    </paragraphs>
+    <paragraphs xml:id="pargraphs-list-comprehensions-nested-loops">
+      <title>Nested loops</title>
+      <p>We will look at two more complicated examples. The first involves nested loops. Imagine for instance that we had a list of lists of numbers, and we wanted to flatten it all into a single list. One way to do this would be via a nested loop, the other would be via a list comprehension:</p>
+      <program language="python">
+      nums = [[1, 2, 3], [4, 5, 6]]
+      # Via nested loop
+      result = []
+      for row in nums:
+          for n in row:
+              result.append(n)
+      # Via list comprehension:
+      result = [
+          n
+          for row in nums
+          for n in row
+      ]
+    </program>
+      <p>So each subsequent <c>for-in</c> generator will happen within each case of the previous generators. So for every <c>row</c> in the <c>nums</c> list and every number <c>n</c> in that <c>row</c>, we read that number.</p>
+      <p>Here is a more complicated example for finding all <q>Pythagorean triples</q> up to 100. A Pythagorean triple is three integers x, y, z such the squares of x and y add up to the squares of z. Here is how that might look via a list comprehension:</p>
+      <program language="python">
+      triples = [
+          [x, y, z]
+          for x in range(1, 101)
+          for y in range(1, 101)
+          for z in range(1, 101)
+          if x*x + y*y == z*z
+      ]
+    </program>
+    </paragraphs>
+    <paragraphs xml:id="paragraphs-dictionary-comprehensions">
+      <title>Dictionary comprehensions</title>
+      <p>A list comprehension can actually produce a dictionary instead. Here is an example where for each string in the list of words earlier we create a key in the dictionary, whose value is the length:</p>
+      <program language="python">
+      {
+        word: len(word)
+        for word in words
+      }
+    </program>
+    <p>You can also do the opposite and process a dictionary as part of a list comprehension. The trick there is that if <c>d</c> is a dictionary then <c>d.items()</c> is effectively a list of tuples where the first part is the key and the second part is the value. So we can do for example: </p>
+    <program language="python">
+      d = {
+        "a": 4,
+        "b": 3,
+        "c": 6
+      }
+      squaresd = {
+        key: value * value
+        for (key, value) in d.items()
+      }
+    </program>
+    </paragraphs>
+    <exercises xml:id="exercises-list-comprehensions">
+      <exercise>
+        <p>Start with a list of strings, and produce instead a single list containing all the individual characters.</p>
+      </exercise>
+      <exercise>
+        <p>Here is a list of student information:</p>
+        <program language="python">
+        students = [
+            {
+                "login": "jdoe", "first": "John", "last": "Doe",
+                "courses": ["CS101", "MATH203"]
+            },
+            {
+                "login": "asmith", "first": "Alice", "last": "Smith",
+                "courses": ["BIO110", "CHEM101", "PSY200", "ENG150"]
+            },
+            {
+                "login": "bnguyen", "first": "Bao", "last": "Nguyen",
+                "courses": ["CS102"]
+            },
+            {
+                "login": "lwilson", "first": "Liam", "last": "Wilson",
+                "courses": ["ENG101", "HIST210", "PHIL105", "SOC110", "MATH240"]
+            },
+            {
+                "login": "cpatel", "first": "Chitra", "last": "Patel",
+                "courses": ["CS103", "STAT250"]
+            },
+            {
+                "login": "msanchez", "first": "Maria", "last": "Sanchez",
+                "courses": ["BIO120", "PSY101"]
+            }
+        ]
+      </program>
+        <p>Starting with a list of such dictionaries as input, use a list comprehension to create a list that contains triples <c>(login, fullname, number)</c> containing the student's login, full name (first-space-last) and number of courses.</p>
+      </exercise>
+      <exercise>
+        <p>Instead of a list comprehension, now use a dictionary comprehension where the logins will be the dictionary keys and the triples will be the corresponding values.</p>
+      </exercise>
+      <exercise>
+        <p>With the same input, use a list comprehension to create a list of pairs <c>(login, coursename)</c> for each course a student is enrolled in.</p>
+      </exercise>
+      <exercise>
+        <p>Starting with two lists of numbers, use a list comprehension to produce all possible sums of a number from the one list and a number from the other list.</p>
+      </exercise>
+      <exercise>
+        <p>Starting with a list of numbers, use a list comprehension to produce a list of strings, each string consisting of a number of asterisks equal to the corresponding number (multiplying a string with a number returns that string replicated that many times).</p>
+      </exercise>
+    </exercises>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-generators">
+    <title>Generators</title>
+    <p>
+      A generator is a special kind of function:
+      <ul>
+        <li>Generator functions contain somewhere in their body the keyword <c>yield</c>.</li>
+        <li>When generator functions are called, they return a <term>generator object</term>. These objects can be used as an iterable or list (e.g. in a for-in loop).</li>
+        <li>When asked to produce its first element, that generator runs the function to the first <c>yield</c>, then returns whatever is specified next to the <c>yield</c>. It then remembers that place.</li>
+        <li>When asked to produce the next element, the generator object continues from where it had left last.</li>
+        <li>The generator object continues this way until the function ends.</li>
+      </ul>
+    </p>
+    <p>
+      Probably the simplest example of a generator is the familiar <c>range</c> function. Here is how we might implement our own version (called <c>myrange</c> to distinguish it):
+    </p>
+    <program language="python">
+      def myrange(a: int, b: int | None = None):
+          if b == None:
+              b = a
+              a = 0
+          while a &lt; b:
+              yield a
+              a = a + 1
+    </program>
+    <p>We've complicated matters a bit: We wanted to specify the type of the optional 2nd parameter, and for that we use the <c>int | None</c>  form that specifies that his value should be either an integer or the keyword <c>None</c>. We also set a default for that parameter to equal <c>None</c> by using <c> = None</c>, so we can call our function with one parameter and it will be like how <c>range(5)</c> is the same as <c>range(0, 5)</c>.</p>
+    <p>You can now use this function just like you would use <c>range</c>. Each time it is called it <em>yields</em> the value of <c>a</c> before incrementing it, and it will stop when <c>a</c> reaches <c>b</c>.</p>
+    <p>The big advantage of this approach is that you end up working with the list of numbers from a to b-1, without ever having to create that entire list in memory. If that list might have very many elements, this can be a real space-saver. Imagine for example going through the lines of a file with millions of lines. Loading all that in memory at the same time would be challenging, but you could have a generator that reads one line at a time, then lets you process it in some way. Minimal memory footprint.</p>
+    <p>Another example of a generator is one that produces the Fibonacci sequence. Recall that this sequence starts with 1 then 1, and each number after that is the sum of the two previous numbers. We can write a Fibonacci generator this way:</p>
+    <program language="python">
+      def fib():
+        a = 1
+        b = 1
+        yield a
+        yield b
+        while True:
+            a, b = b, a + b
+            yield b
+    </program>
+    <p>This generator starts by yielding 1 the first two times, then starts its infinite <c>while</c> loop. In it it computes the next number by doing a <q>double assignment</q>: Simultaneously assigns a to b and b to the sum of a and b (using the not-yet-updated value of a). This way the sum of the last two numbers is now stored in <c>b</c>, while the previous numbers, which used to be in <c>b</c>, is now stored in <c>a</c>. This way the two variables always hold the last two numbers.</p>
+    <p>This generator will run forever. We have to manually stop it, for example:</p>
+    <program language="python">
+      for x in fib():
+        if x > 100:
+          break
+        print(x)
+    </program>
+    <p>These infinite generators are kind of handy, but it would be nice to have a convenient method of stopping them early. we can create such tools. For example we can write a generator that basically mimics another generator but for a specific number of steps:</p>
+    <program language="python">
+      def take(n: int, gen):
+        for x in gen:
+            if n &lt;= 0:
+              return
+            n = n - 1
+            yield x
+
+      # Stops after 10 numbers
+      for x in take(10, fib()):
+        print(x)
+    </program>
+    <exercises>
+      <exercise>
+        <p>Write a generator that starts at 0 and keeps moving up by 1, effectively producing all natural numbers.</p>
+      </exercise>
+      <exercise>
+        <p>Write a generator called <c>skip</c> that takes as parameters a number <c>n</c> and another generator object <c>gen</c> and it skips the first <c>n elements</c>. For example if used on the generator that you just created and with a <c>n=3</c>, then it will skip 0, 1 and 2 and start from 3, then go to 4, 5 etc.</p>
+      </exercise>
+      <exercise>
+        <p>Write a generator called <c>die</c> that keeps generating a random integer from 1 to 6. The <url href="https://docs.python.org/3/library/random.html#random.randint"><c>random.randint</c></url> function can do the heavy lifting for you.</p>
+        <p>There is a built-in generator called <c>enumerate</c> which takes any list of items and "enumerates" them. For example if the list was <c>["a", "b", "c"]</c> then the result of <c>enumerate</c> when given that list would generate the elements <c>(0, "a")</c>, <c>(1, "b")</c> and <c>(2, "c")</c>. It is very useful when you want to do a <c>for</c> loop but also want to use the element's index in addition to the element. Create your own generator, called <c>myenumerate</c>, which does the same thing.</p>
+      </exercise>
+      <exercise>
+        <p>There is a built-in generator called <c>zip</c> which is given two other generators, <c>gen1</c> and <c>gen2</c>, and returns pairs <c>(x, y)</c> where <c>x</c> was obtained from <c>gen1</c> and <c>y</c> was obtained from <c>gen2</c>. Create your own version, called <c>myzip</c>.</p>
+      </exercise>
+    </exercises>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-generator-comprehensions">
+    <title>Generator Comprehensions</title>
+    <p>Generator comprehensions are a combination of the two previous ideas. They work exactly like the list comprehensions, except that they produce a generator instead of a list. They are often described as <em>lazy lists</em>. All we need to do is change the syntax to use parentheses instead of brackets:</p>
+    <program language="python">
+      # gen is a generator. This syntax is the generator comprehension
+      gen = (x*x for x in range(10))
+      gen   # just a generator, you don't see the values
+      for y in gen:
+        print y
+    </program>
+    <p>Generators can be used with functions that expect iterables, like for example the <c>sum</c> function:</p>
+    <program language="python">
+      sum( [x*x for x in range(10)] ) # sum of list comprehension
+      sum( (x*x for x in range(10)) ) # sum as generator
+      sum( x*x for x in range(10) )   # can omit the parentheses
+    </program>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-python-generator-resources">
+    <title>Resources</title>
+    <p>
+      <ul>
+        <li><url href="https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions">List comprehensions official docs</url></li>
+        <li><url href="http://python-3-patterns-idioms-test.readthedocs.io/en/latest/Comprehensions.html">Various examples of list comprehensions</url></li>
+        <li><url href="https://wiki.python.org/moin/Generators">Generators wiki page</url></li>
+      </ul>
+    </p>
+  </subsubsection>
+</subsection>
