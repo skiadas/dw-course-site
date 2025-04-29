@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<reading-questions xml:id="rqs-day-2">
+  <exercise>
+    <p>What are some advantages of generators compared to lists?</p>
+  </exercise>
+  <exercise>
+    <p>What are the syntactic differences between generator comprehensions and tuples?</p>
+  </exercise>
+  <exercise>
+    <p>Can we have a list comprehension that in it has other list comprehensions?</p>
+  </exercise>
+  <exercise>
+    <p>What are the steps needed in order to properly read from a file?</p>
+  </exercise>
+  <exercise>
+    <p>What are the differences between <c>json.dumps</c> and <c>json.dump</c>?</p>
+  </exercise>
+  <exercise>
+    <p>If we are reading a binary file, which file object methods would be most appropriate to use?</p>
+  </exercise>
+</reading-questions>

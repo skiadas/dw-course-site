@@ -13,4 +13,5 @@
   </introduction>
   <xi:include href="sub-w1-d2-generators-comprehensions.ptx" />
   <xi:include href="sub-w1-d2-reading-files-and-json.ptx" />
+  <xi:include href="sub-w1-d2-reading-questions.ptx" />
 </section>
