@@ -146,6 +146,26 @@
         </ul>
         </p>
       </exercise>
+      <exercise>
+        <p>
+          Use the following command in the terminal to download information about "issues" from the official Linux kernel repository:
+        </p>
+        <program language="$">
+curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/torvalds/linux/issues\?per_page\=100 &amp; issues.json
+        </program>
+        <p>
+          When this is done you should have a file <c>issues.json</c> which contains a list of these issues.
+          <ul>
+            <li>Read the file in Python and process the results using a list comprehension, to obtain tuples that contain: the username of the author, the title of the issue, the state of the issue, and the number of comments.</li>
+            <li>Write the result in both JSON form and CSV form (using the <c>json.dumps(s)</c>string to obtain the quoted version of a string.</li>
+            <li>Optional: Filter out the closed issues, keeping only the open ones.</li>
+            <li>Optional: Sort the list based on number of comments.</li>
+          </ul>
+        </p>
+      </exercise>
     </exercises>
   </subsubsection>
 </subsection>
