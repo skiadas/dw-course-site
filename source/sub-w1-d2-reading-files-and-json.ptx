@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-reading-files-and-json">
+  <title>Reading and writing files, and JSON files</title>
+  <introduction>
+    <p>In this section we will discuss a few things:
+      <ul>
+        <li>We'll look at the generals of reading and writing files in Python. In particular the concept of a <term>file object</term>.</li>
+        <li>We will look at modes for working with JSON structures.</li>
+      </ul>
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-reading-and-writing-files">
+    <title>reading-and-writing-files</title>
+    <p>In general information comes to us in one of two ways: Either via a network connection (e.g. a website) or in a file. We now look at how to work with files.</p>
+    <p>To work with a file, you need to <em>open</em> it. This is done via the Python command <c>open</c>. You need to specify a couple of things:
+    <ul>
+      <li>The <term>path</term> to the file. A path can be <term>absolute</term> or <term>relative</term> to what the current directory is. Absolute paths start with a forward slash <c>/</c> on Linux or MacOS systems, and with something like <c>C:\</c> on Windows systems.</li>
+      <li>In what form you want to open the file. The main choices are <c>"r"</c> for "read" or <c>"w"</c> for "write". These will open the file in "text form". If you want to instead read a binary file (for example an image file) you want to specify the binary forms, which are <c>"rb"</c> or <c>"wb"</c>. You can read about more options at <url href="https://docs.python.org/3/library/functions.html#open">the documentation for open</url>.</li>
+      <li>If it is a text file, you may want to also specify the <term>encoding</term> to be used.</li>
+      <li>The return value is a <term>file object</term>, which can be further queried for information.</li>
+      <li>If you open a file, you must remember to also <em>close</em> it.</li>
+    </ul></p>
+    <paragraphs>
+      <title>File objects</title>
+      <p>A file object holds a connection to a file. To is associated with a system-level handle on that file, which lets you read or write, knows where in the file you currently are, and so on. The main <url href="https://docs.python.org/3/tutorial/inputoutput.html#methods-of-file-objects">methods you can use on a file object</url> are:
+        <ul>
+          <li><c>f.read()</c> can be used to read the entire file contents and return a string (or a ,<c>bytes</c> object if we were reading as binary). If the file is very large this may be a mistake, as it will take up too much memory.</li>
+          <li><c>f.read(n)</c> can be used to read the next <c>n</c> characters (in text mode) or bytes (in binary mode). Note the distinction: Depending on the encoding, each character may be taking more than one byte.</li>
+          <li><c>f.readline()</c> will read the next line (including any newline character).</li>
+          <li><c>f.readlines()</c> will read the entire file contents but return it to us as a list of strings, one for each line. This again may be a bad idea if we have a very large file.</li>
+          <li>You can use the file object in a loop situation, then the system will basically keep calling <c>f.readline()</c> to generate the elements for the loop. This of this as acting like a generator.</li>
+          <li><c>f.write(data)</c> can be used to write data to a file.</li>
+        </ul>
+        As an example, a simple program that will just print each line back out, but also enumerating them, would be this:
+      </p>
+      <program language="python">
+        f = open("temp.py", "r")
+
+        i = 0
+        for line in f:
+          i += 1
+          print("%d: %s" % (i, line), end='')
+        # Don't forget to close:
+        f.close()
+      </program>
+      <p>This program reads the contents of <c>temp.py</c>, and prints them back out inserting a number and colon in front.</p>
+      <p>Because of how easy it is to forget to close a file, there is a variation of the <c>open</c> syntax that <em>auto-closes</em> the file, and is worth getting used to:</p>
+      <program language="python">
+        with open("temp.py", "r") as f:
+          i = 0
+          for line in f:
+            i += 1
+            print("%d: %s" % (i, line), end='')
+      </program>
+      <p>Note how we use <c>end=''</c> to tell the <c>print</c> method to not put a newline at the end, as the lines we get already contain a newline.</p>
+      <exercise>
+        <p>Write a program that reads a file and reports how many characters there are in total, and how many lines there are in total.</p>
+      </exercise>
+      <exercise>
+        <p>
+          Write a program that reads a CSV file (assume a simple version with no quoted strings) and returns a list of lists of strings. So each element of the top-level list is itself a list of strings, namely the entries of a corresponding row. So for example if the first row in the file is <c>name,title,score</c>, then the first entry in the returned list should be the list <c>["name", "title", "score"]</c>.
+        </p>
+      </exercise>
+    </paragraphs>
+    <exercises>
+      <exercise>
+        <p>
+          Write a function that given an integer from 0 to 15 turns it into a hex character. If you do it smartly you can use two different calls to <c>chr</c>, one for the case where the number is 0-9, so you can offset it from where 0 is in ASCII, and another where the number is 10-15, so you can offset it from where A is in ASCII.
+        </p>
+      </exercise>
+      <exercise>
+        <p>Write a function that given an integer number writes it out in hex form. Key idea: Compute the number modulo 16, then this remainder turned to hex by the previous function you wrote is the very last hex digit of the number. And if you instead divide the number by 16 and turn the quotient to hex, that's the remaining digits. Now put the two together. If you know recursion, it can be used here.</p>
+      </exercise>
+      <exercise>
+        <p>
+          Use the previous function to write a program that reads a file that is in UTF-8 format and prints out the hex digits of it, the way that the <c>xxd</c> function did. You can do this by simply reading 1 character at a time, using <c>f.read(1)</c>, then turning it to an integer with <c>ord</c>, then using the previous function, and writing the result out using print (disabling the newline). If you prefer you can instead write to a file.
+        </p>
+      </exercise>
+      <exercise>
+        <p>(This is a challenge) Write a program that does the opposite: Given a file that contains the hex output like <c>xxd</c>, produce a file that has the corresponding unicode characters. You will need to first of all read the hex digits two at a time and convert them to numbers, and then you'll need to detect if that number is by itself a utf-8 or whether it is in one of the forms where you need to read more hex digits (see the table of 4 cases in the Wikipedia page). You'll probably want a helper function that given a file object reads "just enough digits to produce the next unicode character".</p>
+      </exercise>
+    </exercises>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-reading-and-writing-json-files">
+    <title>Reading and writing JSON files</title>
+    <p>In order to work with JSON files in particular, we need to import a package that will do the hard work for us. This is the <c>json</c> package. There are two ways to import it:</p>
+    <program language="python">
+      import json      # import the whole package
+      json.loads(...)  # Use its loads method accessed via dot notation
+      # Alternative
+      from json import loads, dumps
+      loads(...)
+      dumps(...)
+    </program>
+    <p>Nothing special about the json package here, the same principle applies to all packages. You want to decide if you want to use the dot notation or if the shorthand is more effective.</p>
+    <p>
+      There are four main functions provided by the <url href="https://docs.python.org/3/library/json.html#basic-usage"><c>json</c> package</url>:
+      <ul>
+        <li><c>loads(string)</c> reads a string that contains JSON content, and turns it into an object. For example <c>json.loads('{ "a": [4, 5] }')</c> will produce a dictionary with a single key <c>a</c> with value a list of the numbers 4 and 5.</li>
+        <li><c>load(f)</c> is the more useful variation, as it instead reads from a provided file object. Think of it as <q>reading the file contents then calling <c>loads</c> on it</q>, but more efficient.</li>
+        <li><c>dumps(obj)</c> take an object, hopefully something like a dictionary with appropriate contents, and returns a string that is the JSON equivalent. Effectively the inverse process to <c>loads</c>.</li>
+        <li><c>dump(obj, f)</c> takes an object and a file object, and writes the JSON representation of the object into the file.</li>
+      </ul>
+      Here's a quick demonstration:
+    </p>
+    <program language="python">
+      import json
+      obj = {
+        "first": "John",
+        "last": "Doe",
+        "age": 23
+      }
+      with open("results.json", "w") as f:
+        json.dump(obj, f)
+    </program>
+    <p>At the end of this program the file should contain the object.</p>
+    <exercise>
+      <p>
+        Try <c>json.dump(obj, f, indent=2)</c>, what do you see?
+      </p>
+    </exercise>
+    <exercises xml:id="exercises-reading-json-files">
+      <exercise>
+        <p>
+          <url href="https://unicode-api.aaronluna.dev/v1/characters?limit=80&amp;starting_after=0x1F5FF">This webpage</url> contains in JSON form information about most emoticons. Save the page (as a <c>.json</c> file), then do the following:
+          <ul>
+            <li>Upload the file into your codespace (right-click the practice folder).</li>
+            <li>Read it into a dictionary in Python using <c>open</c> and <c>load</c>.</li>
+            <li>Write it back out to a file but using the <c>indent=...</c> trick to get it nicely formatted, so you can see its structure.</li>
+            <li>Now that you can see its structure, loop over the characters contained there and write them out to a file with one line per character, where you show the character's code point, then the character itself, and finally its name.</li>
+            <li>Write a variation that instead produces a CSV document (don't use any fancy libraries for the CSV part, just write things out separated by commas). Include a first row with column headings.</li>
+          </ul>
+        </p>
+      </exercise>
+    </exercises>
+  </subsubsection>
+</subsection>

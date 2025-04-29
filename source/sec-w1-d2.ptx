@@ -8,10 +8,9 @@
         <li>Python tools: Generators, list comprehensions, generator comprehensions</li>
         <li>Reading and writing JSON and YAML</li>
         <li>Activity: working with JSON data</li>
-        <li>HTTP protocol, `httpx`</li>
-        <li>Activity: HTTP interactions</li>
       </ul>
     </p>
   </introduction>
   <xi:include href="sub-w1-d2-generators-comprehensions.ptx" />
+  <xi:include href="sub-w1-d2-reading-files-and-json.ptx" />
 </section>

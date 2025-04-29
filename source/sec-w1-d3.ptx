@@ -4,6 +4,8 @@
   <title>Wednesday</title>
   <p>
     <ul>
+      <li>HTTP protocol, <c>httpx</c></li>
+      <li>Activity: HTTP interactions</li>
       <li>More HTTP</li>
       <li>RESTful APIs</li>
       <li>Activity: Interacting with RESTful APIs</li>
