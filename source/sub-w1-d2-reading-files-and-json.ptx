@@ -133,6 +133,19 @@
           </ul>
         </p>
       </exercise>
+      <exercise>
+        <p>This <url href="https://openlibrary.org/search.json?author=tolkien">webpage</url> contains in JSON form information on various books by JRR Tolkien. Save it as a json file, upload it to your codespace, and then:
+        <ul>
+          <li>Read it in as a JSON document.</li>
+          <li>Use a list comprehension on the <c>docs</c> part of the document, which is the list of book entries, to produce a list of tuples <c>(first_publish_year, edition_count, title, average_editions_per_year)</c>. The last entry you would need to compute from the edition count and the difference between the current year and the publication year. This would be a float hopefully, if you do it right.</li>
+          <li>Write the result out to a JSON file.</li>
+          <li>Write the result out as a CSV file. In order to avoid the possibility of the title containing commas, use <c>json.dumps(title)</c> on the title. Turning a string into JSON form simply puts it in quotes (but takes care to "escape" any quotes it may have contained already).</li>
+          <li>Challenge: find out how to <em>sort</em> a Python list using a <em>key</em>, then sort the list in decreasing number of "average editions per year" before writing it out to files.</li>
+          <li>Amend your initial collection process so that it skips entries that don't "have full text".</li>
+          <li>Optional: Do this with a different author.</li>
+        </ul>
+        </p>
+      </exercise>
     </exercises>
   </subsubsection>
 </subsection>
