@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<subsection xml:id="subsec-rest">
+  <title>REST</title>
+  <introduction>
+    <p>In this section we will discuss RESTful APIs. REST is just a particular way of utilizing HTTP that has certain advantages.</p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-rest-basics">
+    <title>The basics of REST</title>
+    <p>REST stands for <q>REpresentational State Transfer</q>, which is a bit of a mouthful, and is best described in terms of the goals it proposes for a Web API design. A key underlying principle is <em>that REST attempts to use as much of the HTTP protocol as possible to communicate information</em>. This is in contrast to other standards that place all pertinent information about the request mostly in the request's body.</p>
+    <p>It is hard to appreciate REST without knowing what other options were around at the time. As an example though, another popular protocol in the past, called SOAP, would communicate the requests by the contents of the body of the request, which looked like this horrible mess:</p>
+    <program language="xml">
+      <![CDATA[
+      <?xml version="1.0"?>
+      <soap:Envelope xmlns:soap="https://www.w3.org/2003/05/soap-envelope">
+        <soap:Header>
+        </soap:Header>
+        <soap:Body>
+          <m:GetUser>
+            <m:UserId>123</m:UserId>
+          </m:GetUser>
+        </soap:Body>
+      </soap:Envelope>
+      ]]>
+    </program>
+    <p>
+      The above request, once you dig into it, basically asks you to <q>get the information for the user with id 123.</q>
+    </p>
+    <p>
+      By contrast, the REST principles say that you should have a <c>/user/123</c> resource path that represents this user with id 123, and you should make a <c>GET</c> request to that path if you want to get the info for that user.
+    </p>
+    <p>
+      So the key driving idea behind REST is this:
+      <ul>
+        <li>Use the HTTP verb to provide <term>method information</term>, i.e. a description of what kind of operation you want to perform (query, create, update, delete, etc). The server should not have to read the body of your message to find out what you are attempting to do.</li>
+        <li>Use the resource path to provide <term>scoping information</term>, i.e. the details of which specific data/resource you would like to operate on. The server should not have to read the body of your message to find out what resource you are targeting.</li>
+      </ul>
+    </p>
+    <p>
+    </p>
+    <p>
+      This may sound obvious nowadays, but it was revolutionary at the time. One of its biggest advantages was that it allowed easier <term>caching</term> of information. Your web browser, or some intermediary caching service, can for example recall that the resource <c>/user/123</c> was last requested 5 minutes ago and the response had been stored somewhere, and it can simply return that response right away without having to bother the actual server. This caching service does not need to inspect the body of the message like it would have to in the SOAP example, and in fact doesn't need to know anything about SOAP.
+    </p>
+    <p>A key feature of REST is <em>addressability</em>: any resource should be addressable via at least one URI/resource path (though it is possible for multiple URIs to refer to the same resource). This is a key feature afforded to us by the use of the web. Statelessness is another key part of this: That URI should be all the information you need to get to the resource. The server should not have to remember anything from your prior activities on the site.</p>
+    <p>As an example, imagine that we wanted to provide access to the student evaluations database. Then we might have the following resources:
+      <ul>
+        <li>The list of all students could be available at the <c>/student</c> path. We could make a GET request there to get a listing of all the students, or a POST request to add a new student. The list of all students could contain for us links to the individual student resources.</li>
+        <li>A particular student could be available at the <c>/student/{id}</c> path, where <c>{id}</c> would be the student's id (or maybe username). We could GET at that resource to find information about the student, including perhaps links to the various enrollments of that student in classes, or we could POST or PUT to update the student's information.</li>
+        <li>A particular section offering of a class may be available at the path <c>/section/{prefix}/{no}/{year}/{term}/{sectionLetter}</c>. We might do a GET request to such a section to find information about it, or a POST or PUT request to change its status (e.g. to turn on evaluations).</li>
+        <li>Or perhaps instead each section is represented by some id, and then we can have a resource <c>/section/{id}</c> instead.</li>
+        <li>The evaluation for a particular section by a particular student may be available at <c>/eval/{sectionId}/{studentId}</c>. A student could use a GET request to obtain the form to fill out, then use a POST or PUT request to submit the evaluation, or perhaps a DELETE request to remove their submission.</li>
+        <li>A professor may be able to access the evaluations for their section by going to <c>/eval/{sectionId}</c>.</li>
+      </ul>
+    </p>
+    <paragraphs>
+      <title>Uniform use of HTTP methods/verbs</title>
+      <p>
+        A key part of this philosophy is that the HTTP methods are used in a consistent way:
+        <ul>
+          <li>GET is used to fetch a resource at the given URI.</li>
+          <li>PUT when used with a URI for a non-existent resource, it is used to create the resource. If the resource at that URI exists, it replaces it. The body of the request contains the information necessary for the creation or replacement of the resource.</li>
+          <li>DELETE is used to delete a resource at a given URI (when permitted).</li>
+          <li>HEAD is used to fetch the metadata of a resource, that are present in the HTTP headers.</li>
+          <li>OPTIONS reports which HTTP methods a certain resource supports (e.g. to determine if DELETE is possible). This will be communicated in a header called "Allow".</li>
+          <li>
+            <p>POST is used for essentially two purposes. One is to create "subordinate resources". For instance, performing a POST in the "students" resource earlier could be used to create a new student. It would be similar in effect to performing a PUT at the student resource directly. In order to determine which of the two should be used, we need to ask who is responsible for generating the new resource's "name" and URI. If it is the client, then a PUT is used; If it is the server, then a POST on the parent is used.</p>
+            <p>The second use of POST is to update information of a resource. For example if a student changes name, we would update that information via a POST request to the specific student's URI.</p>
+            <p>In both usages the key is that POST is used to update subordinate information for a resource, be they resources themselves or just properties/data associated with the resource.</p>
+          </li>
+        </ul>
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Safety and Idempotence</title>
+      <p> Two important concepts that emerge from proper usage of HTTP methods are safety and idempotence.</p>
+      <p>A <term>safe</term> request is one that does not change the server state. For instance in a proper design, all GET and HEAD requests are safe, as they simply fetch information. By contrast, DELETE, PUT and POST are not safe, as they are fundamentally designed to change the server state.</p>
+      <p>This may seem like a minor point, but it has some important consequences. In earlier days, before some of these notions were crystallized, GET requests were often used to delete resources. For instance a GET request to <c>/yourresourceURI/delete</c> would delete the resource. Around the same time some of the popular browsers attempted to speed up your work by following via GET any links in a webpage, and prefetching them so they can show them to the user faster should the user click one of those links. These browsers had no way of knowing whether the GET request they made would end up deleting something or not. Disaster ensued. <em>We need to be able to trust that GET operations are safe, so that we an perform them as a way of prefetching without worrying about changing server data</em>.</p>
+      <p>Idempotence is a slightly different idea. An operation is <term>idempotent</term>, if repeating it has no effect. Sending two identical DELETE requests for example should result in the second request doing nothing; the resource was already deleted from the first request. In general we expect GET, HEAD, DELETE and PUT to all be idempotent. This allows clients to safely send such a request a second type and not worry about the effect to the server.</p>
+      <p>The idempotence of PUT should be kept in mind. PUT creates or replaces a resource, it does not update it in the way that POST does. You can send a PUT request multiple times and expect the effect to be the same as if you used it once, in the same way that having multiple <c>x=5</c> assignments is the same as having only one such assignment. By contrast, POST is more analogous to a <c>x++</c> statement. Multiple POSTs could have accumulated effects.</p>
+    </paragraphs>
+  </subsubsection>
+</subsection>

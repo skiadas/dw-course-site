@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<subsection xml:id="subsec-http">
+  <title>HTTP</title>
+  <introduction>
+    <p>In this section we will cover the key ideas of the HTTP protocol, which is at the core of every communication over the internet these days. We will however start with a brief discussion of network layers.</p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-the-tcp-ip-network-layer-model">
+    <title>The TCP/IP Network Layer Model</title>
+    <p>
+      One of the cornerstones of the Internet is the concept of network layers. At its core it is a simple idea: Create multiple layers of responsibilities, and try to make it so that each layer knows as little as possible about each other.
+    </p>
+    <p>
+      There are many layer models, but a simple one suitable for our purposes is the TCP/IP 4-layer model, which basically describes what goes on in networking communications in terms of four layers:
+    </p>
+    <table>
+      <title>The TCP/IP 4-layer model</title>
+      <tabular>
+        <col width="30%" />
+        <col width="70%" />
+        <row bottom="minor">
+          <cell><term>Link layer</term></cell>
+          <cell><p>The lowest level, responsible for the physical transmission of electronic signals from one machine to another. </p></cell>
+        </row>
+        <row bottom="minor">
+          <cell><term>Internet layer</term></cell>
+          <cell><p>This level is responsible for keeping track of the network connections, providing ways to identify different machines, knowing which machines connect to which others, finding a path through the network from one point to another etc. This is the domain of the <term>IP</term> protocol, and the IP address scheme.</p></cell>
+        </row>
+        <row bottom="minor">
+          <cell><term>Transport Layer</term></cell>
+          <cell><p>This layer is responsible for ensuring the reliable transmission of data between network nodes. This is the place where the <term>TCP</term> protocol does its work to ensure that the communicating parties are in sync. It offers ways to verify that a message has been received, for example.</p></cell>
+        </row>
+        <row>
+          <cell><term>Application Layer</term></cell>
+          <cell>At this layer we already have an established communication between the two endpoints, and we are merely concerned with our particular application needs and describing what we want to have happen. If all the previous layers established what happens when we call someone, this layer is responsible with the actual conversation we will have with this person. This is the place where the <term>HTTP</term> protocol comes into place.</cell>
+        </row>
+      </tabular>
+    </table>
+    <p>We will be focusing our work at the HTTP layer, and leave understanding of the other layers for a Networking course.</p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-http-basics">
+    <title>The HTTP protocol</title>
+    <p>The <em>HyperText Transfer Protocol</em> is essentially the mechanism used by web browsers and web servers to communicate, although it allows us to do a few more things. But for starters, every time you point your browser to a web page, you are using HTTP behind the scenes.</p>
+    <p>So what is HTTP? At its core it is just a specification for the contents of a network packet. when your browser requests a web page it has to send some stuff over the network to some other computer. The structure of this stuff is what HTTP is about.</p>
+    <paragraphs>
+      <title>HTTP at a high level</title>
+      <p>Here's the basics of HTTP at a high level:
+        <ul>
+          <li>HTTP is a non-symmetric protocol between two parties, where one of them is the <term>client</term>, which sends a <term>request</term> and the other is a <term>server</term> which sends a <term>response</term>. A basic HTTP interaction consists of this request-response pair.</li>
+          <li>
+            <p>
+            The client's request must contain two key pieces of information:
+            <ul>
+              <li>The <term>request method/verb</term>, which specifies <em>what effect you are aiming for</em>, and</li>
+              <li>the <term>resource path</term> which specifies the specific <em>resource</em> you are interested in.</li>
+            </ul>
+            </p>
+            <p>For example when we type in our username-password on a form and click the Login button, this is usually what is known as a <c>POST</c> request, indicating that we are submitting information instead of just retrieving information, and the resource path might be something like <c>/login</c> indicating that we are trying to log in.</p>
+            <p>Or as another example, when you visit this particular webpage, browser's location bar will contain something like this: <c>/dw-course-site/sec-week-1-day-2.html#subsec-intro-python</c>, indicating the resource path we are after. And your browser initiated a <c>GET</c> method request, indicating that it was simply seeking to retrieve some information, namely the contents of this very page.</p>
+          </li>
+          <li>Upon receipt of this request, the server will produce and send back a response. This response will contain at a minimum a <term>status code</term>, which is a number that indicates how successful the request was. If you have ever ran to a webpage that gave you the message of 404, that's an example of a status code.</li>
+          <li>Both the request and the response may contain a number of <term>headers</term>, which are simply key-value pairs. Although these could be arbitrary, there are a number of headers that carry especial meaning. For example the client may use such a header to indicate to the server that it would like a JSON response if possible.</li>
+          <li>Some requests or responses may also contain a <term>body</term>, which can be almost anything, but it is somehow related to the request. For example when you try to log in that body may contain your username and password, or when you visit a webpage then the response body is the actual HTML that you will see on the page.</li>
+          <li>The HTTP protocol has two characteristics that have made it particularly successful. One is that it is <term>addressable</term>. This means that every resource is fully identified by the IP address of the server along with a resource path string. For example Google search as a concept is fully specified by the address <c>www.google.com</c> combined with the resource path <c>/search</c>. Or put another way, if you copy the location address from your web-browser when you visit a page, then send it to someone else and they paste it on their web browser, they will end up at the exact same webpage and see the same content. Each location has a specific address you can use, you don't have to say "enter the town of Hanover, then turn right at the first gas station, then ...".</li>
+          <li>The other important characteristic is that the protocol is <term>stateless</term>. When I use a particular URL in the location bar, it takes me to a specific page. The web server doesn't need to know anything about what other pages I just visited, or what I had for breakfast, and doesn't need to have any prior communication with me. The address is all it needs to respond to my request. This is important as it allows, for example, multiple web servers to all respond to requests without knowing about each other. And if one of the servers goes down and my request is redirected to another one, that other one can reply right away, because nothing about the previous transactions is relevant.</li>
+          <li>You might wonder how any of the above is possible, when you have situations like when you log in to a website and it remembers you. That's a great question, but a topic for another day.</li>
+        </ul>
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>HTTP requests</title>
+      <p>
+        Here's an example of what an HTTP request may look like:
+      </p>
+      <program language="$">
+  POST /contact_form.php HTTP/1.1
+  Host: developer.mozilla.org
+  Content-Length: 64
+  Content-Type: application/x-www-form-urlencoded
+
+  name=Joe%20User&amp;request=Send%20me%20one%20of%20your%20catalogue
+      </program>
+      <p>The first thing to note is the special first line. It contains three things: The method, in this case <c>POST</c>, the resource path (<c>/contact_form.php</c>) and the protocol version (<c>HTTP/1.1</c>). Every HTTP request must have a similar line.</p>
+      <p>After that line we see three header lines. The first specifies a <c>Host</c>, the second specifies the content length of 64 bytes, and the third identifies the type of the content. </p>
+      <p>After that we have an empty line, and following that is the content, which in this case contains a name and some request information. Its length must be exactly 64 bytes as that's what we said in our headers.</p>
+      <p>A common example of content would be some kind of JSON information, in which case the content type would be <c>application/json</c>.</p>
+      <p>Let us briefly discuss the possible method verbs, as there are very few and they carry meaning:
+        <ul>
+          <li><term>GET</term> asks for some resource and is not meant to cause any changes to the server. You should be able to call this as many times as you like the result would always be the same. Every time your browser goes to a new web page, it uses GET.</li>
+          <li><term>POST</term> is typically expected to be used for updating some server information. A good example is filling in and submitting forms. POST requests are not safe to send multiple times. You may end up with multiple filled forms if you do.</li>
+        </ul>
+        These first two are particularly important, because these are the only ones that web browsers may send. But when we create a client programmatically we also have the options below:
+        <ul>
+          <li><term>PUT</term> is used for changing information of some server resource. This sounds a bit like what POST does but there are some subtle differences that we will come back to later.</li>
+          <li><term>DELETE</term> is used to delete resources, if the server supports it.</li>
+          <li><term>HEAD</term> is used when you only want to receive header information, without any content body. It is useful as an early interaction step with a server in order for the client to find out what kind of headers to provide along with the "true" request.</li>
+          <li><term>OPTIONS</term> is used to test what options are allowed by the server, and it has some niche use cases.</li>
+        </ul>
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>HTTP responses</title>
+      <p>An HTTP response has a similar structure. Here is an example of what a web server sends bck when a web browser requests some page:</p>
+      <program language="$">
+    HTTP/1.1 200 OK
+    Date: Sat, 09 Oct 2010 14:28:02 GMT
+    Server: Apache
+    Last-Modified: Tue, 01 Dec 2009 20:18:22 GMT
+    ETag: "51142bc1-7449-479b075b2891b"
+    Accept-Ranges: bytes
+    Content-Length: 29769
+    Content-Type: text/html
+
+    &lt;!DOCTYPE html... (here comes the 29769 bytes of the requested web page)
+      </program>
+      <p>So we see a similar first line, followed by headers, followed by a newline then content. The first line though is different: It starts with the protocol. followed by the status code, in this case <c>200</c>, <c>OK</c>. Status codes have a numeric value but also an equivalent verbal description. Here are other common status code:
+        <ul>
+          <li><c>200</c> <em>OK</em>, indicates that the request was fulfilled satisfactorily, and typically the content contains the requested resource details.</li>
+          <li><c>301</c> <em>Moved Permanently</em>, indicates that the resource has been moved to a different location. A <em>Location</em> header gives the new location address. In general, all codes in the 3xx range indicate some sort of redirection. This is useful when we change the way we describe our resources. This is similar to filing for a change of address at the post office.</li>
+          <li><c>304</c> <em>Not Modified</em>, indicates that the resource hasn't changed since the last time it was requested. So the client can simply use the last version it had, if it has kept it around. This can save time as you don't need to download and process any new content.</li>
+          <li><c>404</c>, <em>Not Found</em>, indicates that the requested resource cannot be found. Typically the result of typos in the request, e.g. someone asking for <c>/sarch</c> instead of <c>/search</c>. In general, all codes in the 4xx range indicate some sort of client error.</li>
+          <li><c>500</c>, <em>Internal Server Error</em>, indicates problems with the server's configuration/availability. In general, all codes in the 5xx range indicate some sort of server error.</li>
+        </ul>
+      </p>
+      <p>
+        In case you are wondering, we don't often need to create these requests or responses in text exactly this way, we can typically use software or libraries that do some of the heavy lifting for us. For example we might specify the various headers via a dictionary, or also have the software compute some of the headers for us.
+      </p>
+    </paragraphs>
+    <exercise>
+      <p>
+        Pretend you are a web-server. Here are your rules:
+      <ul>
+        <li><p>You are providing a simple arithmetic service. It accepts two resource addresses, <c>/add</c> and <c>/subtract</c>.</p></li>
+        <li><p>You used to also support <c>/minus</c>, but since the creation of <c>/subtract</c> you want to encourage all your users to transition to it, by providing a redirect.</p></li>
+        <li><p>There are no other resources that you are offering. You should be returning a suitable status code if someone requests another resource than the above.</p></li>
+        <li><p>You are only accepting POST requests. If a request is not a POST request, you should respond in a suitable way.</p></li>
+        <li><p>You are requiring all requests to provide the content's length in the <c>Content-Length</c> header. If that header is not present, you should return a suitable status code.</p></li>
+        <li><p>The body of the request should contain the two numbers to add or subtract, separated by a space. Any other form of the body text should result in a bad request.</p></li>
+        <li><p>Successful requests should receive the result of the arithmetic computation in the body of the response. You will also need to correct the <c>Content-Length</c> header value depending on the size of the result.</p></li>
+      </ul>
+      Consider how you would respond to each of the following requests:</p>
+      <program language="$">
+POST /subtract HTTP/1.1
+Content-Length: 6
+
+34 567
+      </program>
+      <program language="$">
+POST /minus HTTP/1.1
+Content-Length: 6
+
+34 567
+      </program>
+      <program language="$">
+GET /add HTTP/1.1
+Content-Length: 4
+
+3 56
+      </program>
+      <program language="$">
+POST /add HTTP/1.1
+Cookie: grgfr4H6d
+
+34 57
+      </program>
+      <program language="$">
+POST /subtract HTTP/1.1
+Content-Length: 4
+
+34,5
+      </program>
+      <program language="$">
+POST /subtract HTTP/1.1
+Content-Length: 2
+
+34 567
+      </program>
+
+    </exercise>
+  </subsubsection>
+</subsection>

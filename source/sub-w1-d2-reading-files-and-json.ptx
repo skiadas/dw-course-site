@@ -11,7 +11,7 @@
     </p>
   </introduction>
   <subsubsection xml:id="subsubsec-reading-and-writing-files">
-    <title>reading-and-writing-files</title>
+    <title>Reading and Writing files</title>
     <p>In general information comes to us in one of two ways: Either via a network connection (e.g. a website) or in a file. We now look at how to work with files.</p>
     <p>To work with a file, you need to <em>open</em> it. This is done via the Python command <c>open</c>. You need to specify a couple of things:
     <ul>

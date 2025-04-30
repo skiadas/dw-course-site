@@ -2,6 +2,7 @@
 
 <section xml:id="sec-week-1-day-3" xmlns:xi="http://www.w3.org/2001/XInclude">
   <title>Wednesday</title>
+  <introduction>
   <p>
     <ul>
       <li>HTTP protocol, <c>httpx</c></li>
@@ -11,4 +12,8 @@
       <li>Activity: Interacting with RESTful APIs</li>
     </ul>
   </p>
+  </introduction>
+  <xi:include href="sub-w1-d3-http.ptx" />
+  <xi:include href="sub-w1-d3-rest.ptx" />
+  <xi:include href="sub-w1-d3-reading-questions.ptx" />
 </section>

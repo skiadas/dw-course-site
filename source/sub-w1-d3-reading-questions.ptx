@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<reading-questions xml:id="rqs-day-3">
+  <exercise>
+    <p>Here is a <url href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers">long list of headers</url>, organized by their usage. Pick out at least 5 headers whose meaning makes some sense.</p>
+  </exercise>
+  <exercise>
+    <p>What are the different HTTP method verbs? What is each one used for?</p>
+  </exercise>
+  <exercise>
+    <p>There is a long list of <url href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status">HTTP Status Codes</url> that the server can use to indicate information. Pick out at least 5 codes we didn't talk about in class, and think about their possible use cases.</p>
+  </exercise>
+  <exercise>
+    <p>Does the web server need to keep track of all the different clients that have ever communicated with it?</p>
+  </exercise>
+  <exercise>
+    <p>Does the message body have to be in a specific format?</p>
+  </exercise>
+  <exercise>
+    <p>What does it mean that the HTTP communication is <em>stateless</em>? What are the advantages of that? What are the disadvantages?</p>
+  </exercise>
+</reading-questions>
