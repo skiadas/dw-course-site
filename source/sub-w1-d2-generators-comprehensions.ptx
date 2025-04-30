@@ -254,6 +254,8 @@
       </exercise>
       <exercise>
         <p>Write a generator called <c>die</c> that keeps generating a random integer from 1 to 6. The <url href="https://docs.python.org/3/library/random.html#random.randint"><c>random.randint</c></url> function can do the heavy lifting for you.</p>
+      </exercise>
+      <exercise>
         <p>There is a built-in generator called <c>enumerate</c> which takes any list of items and "enumerates" them. For example if the list was <c>["a", "b", "c"]</c> then the result of <c>enumerate</c> when given that list would generate the elements <c>(0, "a")</c>, <c>(1, "b")</c> and <c>(2, "c")</c>. It is very useful when you want to do a <c>for</c> loop but also want to use the element's index in addition to the element. Create your own generator, called <c>myenumerate</c>, which does the same thing.</p>
       </exercise>
       <exercise>
