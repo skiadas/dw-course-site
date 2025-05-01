@@ -231,5 +231,11 @@ Content-Length: 2
         The httpx package has similar functions for each other HTTP method, like <c>httpx.post(...)</c> or <c>httpx.put(...)</c>. These functions also take extra parameters to specify data information, for example. You can provide custom headers using a <c>headers = ...</c> parameter, files using a <c>files = ...</c> parameter, and/or form data using <c>data = ...</c> or binary data using <c>content = ...</c>. The documentation has more examples.
       </p>
     </paragraphs>
+    <exercise>
+      <p>Use httpx to download the emoticons table you used yesterday, as well as the Tolkien references from yesterday.</p>
+    </exercise>
+    <exercise>
+      <p>Use httpx to try to visit the <c>canvas.hanover.edu</c> address. What is the response? What is the code? Are there any headers?</p>
+    </exercise>
   </subsubsection>
 </subsection>

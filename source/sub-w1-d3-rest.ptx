@@ -32,10 +32,8 @@
       So the key driving idea behind REST is this:
       <ul>
         <li>Use the HTTP verb to provide <term>method information</term>, i.e. a description of what kind of operation you want to perform (query, create, update, delete, etc). The server should not have to read the body of your message to find out what you are attempting to do.</li>
-        <li>Use the resource path to provide <term>scoping information</term>, i.e. the details of which specific data/resource you would like to operate on. The server should not have to read the body of your message to find out what resource you are targeting.</li>
+        <li>Use the resource path to provide <term>scoping information</term>, i.e. the details of which specific data/resource you would like to operate on. The server should not have to read the body of your message to find out what resource you are targeting. A side-effect of this is that the REST service has to think about all the different "resources" it provides, down to a fairly fine level, and provide each of them with a different path.</li>
       </ul>
-    </p>
-    <p>
     </p>
     <p>
       This may sound obvious nowadays, but it was revolutionary at the time. One of its biggest advantages was that it allowed easier <term>caching</term> of information. Your web browser, or some intermediary caching service, can for example recall that the resource <c>/user/123</c> was last requested 5 minutes ago and the response had been stored somewhere, and it can simply return that response right away without having to bother the actual server. This caching service does not need to inspect the body of the message like it would have to in the SOAP example, and in fact doesn't need to know anything about SOAP.
@@ -77,5 +75,9 @@
       <p>Idempotence is a slightly different idea. An operation is <term>idempotent</term>, if repeating it has no effect. Sending two identical DELETE requests for example should result in the second request doing nothing; the resource was already deleted from the first request. In general we expect GET, HEAD, DELETE and PUT to all be idempotent. This allows clients to safely send such a request a second type and not worry about the effect to the server.</p>
       <p>The idempotence of PUT should be kept in mind. PUT creates or replaces a resource, it does not update it in the way that POST does. You can send a PUT request multiple times and expect the effect to be the same as if you used it once, in the same way that having multiple <c>x=5</c> assignments is the same as having only one such assignment. By contrast, POST is more analogous to a <c>x++</c> statement. Multiple POSTs could have accumulated effects.</p>
     </paragraphs>
+    <exercise>
+      <p>You are designing a REST service for the registrar's office. What resources would you need? What would be their resource paths? What operations are allowed on each?</p>
+      <p>You are designing a system to be used for conducting votes at a faculty meeting. What resources would you create?</p>
+    </exercise>
   </subsubsection>
 </subsection>
