@@ -176,5 +176,60 @@ Content-Length: 2
       </program>
 
     </exercise>
+    <paragraphs>
+      <title>HTTP from the terminal</title>
+      <p>
+        One way to make HTTP requests is from the terminal, most commonly using the <c>curl</c> command. It has a lot of options but it's main syntax would be like so:
+      </p>
+      <pre>
+        curl ....                    # prints result to terminal
+        curl .... -o filename        # writes result to file
+        curl -L ....                 # follow redirects to the new location
+        curl -H "header1:value1" ... # include headers
+      </pre>
+      <p>
+        So key settings you can have is to set the output to go to a file, to include some specific headings, and to follow redirects.
+      </p>
+      <p>
+        We saw an example of this call in the previous lessons:
+      </p>
+      <pre>
+        curl -L \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/torvalds/linux/issues?per_page=100 -o issues.json
+      </pre>
+      <p>
+        There's a lot to unpack here but first of all notice how each line ends with a backslash, <c>\</c>. This allows us to continue the command on the next line. For commands that are going to be super-long this can be very helpful.
+      </p>
+      <p>
+        We are doing a GET request here, and while one can do other kinds of requests using <c>curl</c>, we won't be looking at those. The request needed us to specify a URL, which is the long line <c>https://api.github.com/repos/torvalds/linux/issues?per_page=100</c>. This specifies the protocol (HTTPS is the "secure" version of HTTP), the target server (<c>api.github.com</c>) and the path (<c>repos/torvalds/linux/issues</c>).
+      </p>
+      <p>
+        Also note the <c>-L</c>, which makes sure that if the response was a redirect then it would follow it to the new location. And also the two <c>-H "..."</c> lines that specify two headers; the <c>Accept</c> header is used to indicate what we expect as a result.
+      </p>
+      <p>
+        Finally the <c>-o issues.json</c> part tells the command to save the result in an output file named <c>issues.json</c>.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>HTTP in Python via <c>httpx</c></title>
+      <p>
+        Most programming languages have at least one library to help make HTTP requests. Python has at least two such popular packages, one called <c>requests</c> and another called <c>httpx</c>. We will be looking at <term>httpx</term>. Here is a <url href="https://www.python-httpx.org/quickstart/">quick overview</url>.
+      </p>
+      <program language="python">
+        import httpx
+        r = httpx.get(".....")   # Get back a response object
+        r.encoding   # You can learn what encoding the data has
+        r.text       # The body as a string
+        r.content    # The body as a binary object
+        r.json()     # The body processed as JSON
+        r.status_code
+        r.status_code == httpx.codes.OK
+      </program>
+      <p>
+        The httpx package has similar functions for each other HTTP method, like <c>httpx.post(...)</c> or <c>httpx.put(...)</c>. These functions also take extra parameters to specify data information, for example. You can provide custom headers using a <c>headers = ...</c> parameter, files using a <c>files = ...</c> parameter, and/or form data using <c>data = ...</c> or binary data using <c>content = ...</c>. The documentation has more examples.
+      </p>
+    </paragraphs>
   </subsubsection>
 </subsection>
