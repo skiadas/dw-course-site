@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-intro-sql">
+  <title>Introduction to databases and SQL</title>
+  <subsubsection xml:id="subsubsec-introduction-to-databases">
+    <title>Introduction to databases</title>
+    <paragraphs>
+      <title>The need for databases</title>
+    <p>Databases are essentially the next step in evolution after files, when it comes to storing information. You can get a lot done by simply writing to and reading from files, but there are limitations. Imagine for example wanting to store all the information related to our evaluations system. How would you go about doing that with files?</p>
+    <p>We could imagine storing everything in one big JSON document. We could have top level keys like <c>classes</c>, <c>instructors</c>, and <c>students</c>, each containing information. We then must have enrollments, to represent students who are registered for classes. We could maybe represent each enrollment via a key value pair: <c>{ "class": classcode, "student": "studentusername" }</c>. But we'll then need to somehow keep track of the fact that this student name better also exist under the <c>"students"</c> key at the top level, so there are some integrity considerations.</p>
+    <p>Then, what happens when we want to access the information? We have to load the entire file, which could start getting quite large. Even if we just need to work with a small part of it. And when we want to add something back in, we have to rewrite the whole file.</p>
+    <p>And what if we want to have a distributed system, with many different web servers all being able to answer questions. Would they all be editing that same file at the same time? That can only lead to serious errors.</p>
+    <p>Databases are there to help with all of that stuff.</p>
+    </paragraphs>
+    <paragraphs>
+      <title>Basic operations on databases</title>
+      <p>Data management systems are designed to support a diverse set of operations, but there are four fundamental operations that may be desired of any such system. These are affectionately known via their acronym, CRUD:
+      <ul>
+        <li><term>Create</term> We need the ability to create new entries and records in the system. For instance a new product for our company, a new course to be offered, and so on.</li>
+        <li><term>Read</term> We need the ability to access stored information, preferably in flexible ways and with efficiency.</li>
+        <li><term>Update</term> We often need to update existing entries or records, e.g. when cash is withdrawn from a bank account, when a book returns from a loan, when a course changes name.</li>
+        <li><term>Delete</term> On occasion we may need to delete entries, often for example as a result of erroneous entry or because the record is no longer relevant. And we need to make sure that things stay consistent when that happens. If we delete a student for example, we must also delete all enrollments for that student.</li>
+      </ul>
+      </p>
+      <p>
+        Two different Data Management systems exist depending on the importance and use of these four operations on the current system.
+        <ul>
+          <li><p>
+            <term>Data Warehouses</term> are specifically designed to only <em>create</em> and <em>read</em> data, as well as facilitate the <em>analysis</em> of the data, and does not allow its modification. Warehouses are essential pipelines in the processing of data from an operational system to some other processing center. For instance the wireless access points around campus could be constantly sending information to a data warehouse about the different contact they have with the various computers, tablets and phones that use them. This information is effectively streaming constantly, and it needs to be stored somewhere and quickly retrieved for analysis, but it never has to be updated.
+          </p>
+          <p>
+            Similarly we could imagine a network of sensors recording temperature information from various locations, which may be fed into some analytical process. A data warehouse would be well suited to manage such a situation.
+          </p>
+          <p>These warehouses are particularly effective at what is known as <term>OLAP</term>: Online Analytical Processing.</p>
+            </li>
+          <li>
+            <p>
+            <term>Database</term> Databases are meant to support all CRUD operations. They are therefore best suited for record-keeping working with data that requires updates. A bank's account information would be a good example of the need for a database. While information about the various transactions requested at a bank's ATMs or the internet could be stored well in a warehouse, the actual account information might best be served in a database that allows the update of those accounts.
+            </p>
+            <p>
+              Databases focus on what is known as <term>OLTP</term>: Online Transactional Processing.
+            </p>
+          </li>
+        </ul>
+      </p>
+      <exercise>
+        <p>
+          What system do you think would best support our course evaluations process? What about the work of a registrar's office?
+        </p>
+      </exercise>
+    </paragraphs>
+    <paragraphs>
+      <title>Relational databases</title>
+      <p>
+        One of the most popular types of databases are the so-called <term>relational databases</term>. Data is arranged in tables, each table consisting of records with predetermined fields. Basically this is just <em>tabular data</em>. For instance in our student evaluation database there is a <c>students</c> table, whose records contain three fields, for <c>login</c>, <c>first name</c>, and <c>last name</c>.
+      </p>
+      <p>
+        Tables are then linked to each other via joins that use <term>foreign keys</term>. For example section enrollments are a separate table, whose records consist of a foreign key pointing to a student and a foreign key pointing to a section, and the presence of these two together suggests that the student is enrolled in the section.
+      </p>
+      <p>
+        An important feature that led to the popularity of relational databases is the existence of a powerful query language, known as SQL. We will be learning more about relational databases and SQL in the following sections.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>SQL databases</title>
+      <p>
+        There are a number of established SQL databases out there, and they all use the base underlying programming language, namely SQL:
+        <ul>
+          <li><p><url href="https://www.mysql.com/">MySQL</url> is one of the most popular openly available versions. <url href="https://mariadb.org/">MariaDB</url> is a completely open-source fork of it.</p></li>
+          <li><p><url href="https://www.sqlite.org/index.html">SQLite</url> is a much lighter SQL version which is often used by Android apps for local storage. This is the one we will be using at the start.</p></li>
+          <li><p><url href="https://www.microsoft.com/en-us/sql-server">Microsoft SQL Server</url> is a Microsoft-owned   proprietary SQL database that also sees extensive use.</p></li>
+          <li><p><url href="https://www.postgresql.org/">PostgreSQL</url> is another free and open-source database that sees extensive use, and comes by default in many Linux distributions and also for macOS Server.</p></li><li><p>Many cloud services include some kind of database system.</p></li>
+        </ul>
+        Each database has its differences. A big advantage of sqlite is that it is very simple and small, so you can easily embed it. Many Android apps choose to store their info in a sqlite database.
+      </p>
+      <p>
+        In general, database can be accessed in a number of ways:
+        <ul>
+          <li>You may be running it from a program in the command line.</li>
+          <li>You may be using a programming language library to access from within the language.</li>
+          <li>You may be needing to reach over the network to a whole different computer, or simply reach a process running on your computer.</li>
+        </ul>
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Main SQL commands</title>
+      <p>Here is a list of the main SQL commands. For reference, here is also a <url href="http://cse.unl.edu/~sscott/ShowFiles/SQL/CheatSheet/SQLCheatSheet.html">quick cheatsheet</url>.
+        <ul>
+          <li><p><term>DESCRIBE TABLE</term> returns information about a table.</p></li>
+          <li><p><term>CREATE TABLE</term> is used to create a new table.</p></li>
+          <li><p><term>DROP TABLE</term> is used to remove/delete a whole table.</p></li>
+          <li><p><term>ALTER TABLE</term> is used to make changes to a table's definition (e.g. add a new column, or set an index or add a constraint).</p></li>
+          <li><p><term>INSERT</term> is used to insert new values/rows into a table</p></li>
+          <li><p><term>SELECT</term> is probably the most used of all the commands. Returns some results according to a query. Can also be used as part of other commands.</p></li>
+          <li><p><term>UPDATE</term> is used to change particular parts of particular rows.</p></li>
+          <li><p><term>DELETE</term> is used to delete whole rows based on some query.</p></li>
+        </ul>
+      </p>
+      <p>
+        Let's dig in. First of all we need to download a sample database file. Use this command:
+      </p>
+      <pre>
+        curl -L https://github.com/lerocha/chinook-database/raw/refs/heads/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite \
+          -o chinook.sqlite
+      </pre>
+      <p>
+        You should now have a <c>chinook.sqlite</c> file. This contains an example database. We will now take a look at it. To start, run the sqlite command line on this file:
+      </p>
+      <pre>
+        sqlite3 chinook.sqlite
+      </pre>
+      <p>
+        You are now in the sqlite command line. You can type commands. There are two kinds of commands. A few SQL-specific commands, that always start with a dot. For example to show all available tables, we can do:
+      </p>
+      <pre>
+        .tables
+      </pre>
+      <p>
+        You should see a series of table names. Each of these tables contains information. For example the <c>Album</c> table contains information for various albums.
+      </p>
+      <p>
+        Note that the table names are upper-case. This is not a requirement at all, you just want to stay consistent with whatever choices you have made.
+      </p>
+      </paragraphs>
+      <paragraphs>
+        <title>Create Table</title>
+      <p>
+        Let's start by learning how to create a table. The command <c>.schema Album</c> will show you the creation command for the <c>Album</c> table:
+      </p>
+      <program language="sql">
+        CREATE TABLE [Album]
+        (
+            [AlbumId] INTEGER  NOT NULL,
+            [Title] NVARCHAR(160)  NOT NULL,
+            [ArtistId] INTEGER  NOT NULL,
+            CONSTRAINT [PK_Album] PRIMARY KEY  ([AlbumId]),
+            FOREIGN KEY ([ArtistId]) REFERENCES [Artist] ([ArtistId])
+                        ON DELETE NO ACTION ON UPDATE NO ACTION
+        );
+      </program>
+      <p>
+        So the key start is the <c>CREATE TABLE</c> keyword. Then we have open-close parentheses, and a semicolon at the end. <em>All commands that don't start with a dot must end with a semicolon</em>. Note that the name of the table, and some other names, are inside square brackets. In general these are not needed. But if you have a word that already has a special meaning in the language, or otherwise contains invalid characters, you can surround it with some special characters to allow its use. Different SQL engines use different conventions, the two most popular being using square brackets <c>[...]</c> or backticks <c>`...`</c>. SQLite allows both.
+      </p>
+      <p>
+        Inside the parentheses we specify the different columns that our table should have. For example the first column of this table is called <c>AlbumId</c>. We then specify the type of values that go there, in this case <c>INTEGER</c>. After that we might have other rules. In this case this variable can never be <c>NULL</c> (by default all values are allowed to be NULL unless specified otherwise). This table has two more columns, called <c>Title</c> and <c>ArtistId</c>.
+      </p>
+      <p>
+        Following that you may have two more important kinds of entries: <term>constraints</term> and <term>foreign keys</term>. The line <c>CONSTRAINT [PK_Album] PRIMARY KEY  ([AlbumId])</c> specifies that there is a constraint on this table, titled <c>PK_Album</c> if we ever need to refer to it. And the constraint is that the table has a <term>primary key</term> based on the <c>AlbumId</c> column. Primary keys are set up so that for each value there is only one possible row that has that value. For example there is at most one row with AlbumId 5, at most one with AlbumId 12 etc. The system is also highly optimized so that you can quickly retrieve the row at a given id. Another similar kind of constraint is called <c>UNIQUE</c> and it again specifies that you can't have two rows with the same value. For example we could perhaps specify a UNIQUE constraint that we can't have two entries for the same pair of ArtistId and Title: i.e. we could impose the requirement that we can't have the same artist publishing two different albums with the same name. A table has a unique primary key, but may have multiple unique constraints.
+      </p>
+      <p>
+        The second kind of extra addition to this table is a <term>foreign key</term> constraint. These constraints link tables to each other. This specific key specifies that the <c>ArtistId</c> column in the <c>Album</c> table references the <c>ArtistId</c> column in the <c>Artist</c> table. We are not allowed to have a row in the Album table whose <c>ArtistId</c> doesn't show up in the <c>Artist</c> table: We can't have an album for an artist unless we also know the details of that artist.
+      </p>
+      <p>
+        Note the <c>ON DELETE NO ACTION</c> clause that's part of the foreign key. This tells the system how it should behave if an entry in the parent table is deleted. I.e. how should the system behave if an artist is deleted? The options are:
+        <ul>
+          <li>ON DELETE NO ACTION: Don't try to do anything in the foreign key table if a row is removed on the original table. This will leave the database possibly at a bad state, on some databases. On Sqlite, if you have previously ran the command <c>PRAGMA foreign_keys = ON;</c> then it will prevent you from deleting a row that is being referenced, otherwise it won't.</li>
+          <li>ON DELETE RESTRICT: Don't allow deletions if the id is being used as a foreign key. This will actually prevent us from deleting an artist that has any albums, unless we first delete all the albums.</li>
+          <li>ON DELETE CASCADE: If target record gets deleted, also delete all the records that reference it via the foreign key. So if an artist gets deleted, then also delete all their albums.</li>
+          <li>ON DELETE SET NULL (or ON DELETE SET DEFAULT): If the target record gets deleted, set the corresponding foreign key entry to NULL (or to the default value). Only valid if there is no NOT NULL restriction to that column.</li>
+        </ul>
+      </p>
+      <exercise>
+        <p>
+          Inspect the following tables and discuss their columns, their constraints etc, and if they make sense: <c>Artist</c>, <c>Track</c>, <c>Playlist</c>, <c>PlaylistTrack</c>, <c>Employee</c>
+        </p>
+      </exercise>
+    </paragraphs>
+    <paragraphs>
+      <title>Select</title>
+      <p>
+        The most commonly used command in a sql database is the SELECT command. It lets us query one or more tables to get out their information. The simplest form is:
+      </p>
+      <program language="sql">
+        SELECT AlbumId, Title, ArtistId FROM Album;
+      </program>
+      <p>
+        This will show you the rows in that table, with fields as specified. We didn't have to list all the fields, see what happens if you leave out the <c>ArtistId</c>.
+      </p>
+      <p>
+        If you want to include all the columns, you can use the shortcut: <c>SELECT * FROM Album;</c>
+      </p>
+      <p>
+        This is the simplest version of SELECT, that simply gives you back information about what goes on in one table. some times you want all the information, sometimes you want less. You can restrict which rows you target by using a WHERE clause:
+      </p>
+      <program language="sql">
+        SELECT * FROM Album
+          WHERE ArtistId = 252;
+      </program>
+      <p>
+        This command returns all the albums that have the ArtistId value of 252. So this way we see the albums of a particular artist.
+      </p>
+      <p>
+        One thing we can do is also query multiple tables at the same time, here's what we might do:
+      </p>
+      <program language="sql">
+        SELECT * FROM Album, Artist;    # Don't do it!
+      </program>
+      <p>
+        This will kind of do what we want. it will take every row from Album, and every row from Artist. But then it will combine them: It will combine every row from Album with every row from Artist. This results in way too many hits. and is also somewhat useless. We probably wanted to only combine albums with their corresponding artists. To do that we need two changes:
+        <ul>
+          <li>First of all we need to give names to the two tables, so we can refer to the. we can do this by saying something like <c>Album as al</c>.</li>
+          <li>Next we can add a WHERE clause that says that we only want to keep pairs where the ArtistId in the album and the ArtistId in the Artist match.</li>
+        </ul>
+        So this looks as follows:
+      </p>
+      <program language="sql">
+        SELECT al.*, ar.*
+          FROM Album as al, Artist as ar
+          WHERE al.ArtistId = ar.ArtistId;
+      </program>
+      <p>And there you have it!</p>
+      <exercise>
+        <p>List all tracks along with the album each track is from.</p>
+      </exercise>
+      <exercise>
+        <p>List all tracks along with their Genre.</p>
+      </exercise>
+      <p>
+        Let's kick this up a notch! We want to list all tracks that come from albums whose artists names start with A. This involves three tables: We must link tracks to albums, then albums to artists. This requires multiple WHERE conditions, and the way we do this in SQL is using <c>AND</c>:
+      </p>
+      <program language="sql">
+        SELECT t.Name, al.Title, ar.Name
+          FROM Track t, Album al, Artist ar
+          WHERE t.AlbumId = al.AlbumId
+          AND al.ArtistId = ar.ArtistId
+          AND ar.Name LIKE 'A%';
+      </program>
+      <p>
+        The other new thing here is the <c>LIKE</c> clause, which can be used to match a string against some pattern. The pattern here is "A followed by anything".
+      </p>
+      <exercise>
+        <p>List all artists that have recorded a track that has duration of at least 10 minutes.</p>
+      </exercise>
+      <exercise>
+        <p>List all artists whose tracks have made it to a playlist.</p>
+      </exercise>
+      <p>There's a lot more we can do with SELECT queries, but let's look at the other key operations first.</p>
+    </paragraphs>
+    <paragraphs>
+      <title>Insert</title>
+      <p>
+        Let's take a look at how we can insert new entries.
+      </p>
+      <program language="sql">
+        INSERT INTO Artist (ArtistId, Name) VALUES
+          (276, 'My Morning Jacket'),
+          (277, 'Rusty Bladen');
+      </program>
+      <p>
+        So after the table name we list in parentheses the columns, followed by the keyword VALUES, followed by the rows we want to add. The order of values there must match how we listed them at the top. So we could also have done:
+      </p>
+      <program language="sql">
+        INSERT INTO Artist (Name, ArtistId) VALUES
+          ('My Morning Jacket', 276),
+          ('Rusty Bladen', 277);
+      </program>
+      <p>
+        By the way try to run the command again, and you'll see the UNIQUE constraint in action: We already have used those ids.
+      </p>
+      <p>
+        On occasion you may not need to specify all the columns in an INSERT clause. There are two reason for that, even though our specific database doesn't use them: One is that we can specify a column to "auto-increment". For example it could be set that the ArtistId is automatically increased by 1 on each insert. Then we could do insert with only the Name. The other possibility is that a column might have a DEFAULT value specified. In that case you would have that default value used in case you didn't specify that column.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Update and Delete</title>
+      <p>
+        The last two common operations are update and delete. Update lets us update some part of a row, while delete lets us remove a row. Here we can change the artist of an album, and then delete another album:
+      </p>
+      <program language="sql">
+        UPDATE Album
+        SET ArtistId = 4
+        WHERE AlbumId = 3;
+
+        DELETE FROM Album where AlbumId = 2;
+      </program>
+      <p>
+        A word of caution: You can accidentally change or delete way too much. for example, unless there are protections on the database, the line <c>DELETE FROM Album;</c> will literally delete all albums.
+      </p>
+      <exercise>
+        <p>
+          Change all the albums of the artist with Id 10 to now be considered as being made by the artist with Id 20.
+        </p>
+      </exercise>
+    </paragraphs>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-advanced-sql-queries">
+    <title>Advanced SQL queries</title>
+    <p>
+      There are a few more advanced features that we will now discuss:
+      <ul>
+        <li>GROUP BY and aggregating functions allow us to collect together information. For example we can compute the total play time of an album by totalling the durations of its tracks. When you can do such tasks on the database level, they tend to be more efficient.</li>
+        <li>Subqueries can be used as part of another query, to make that query utilize information that is not readily available but instead computed. For example we could find the track with the longest duration by finding the track whose duration equals the max of all the durations.</li>
+        <li>ORDER BY clauses allow us to order the results according to certain criteria.</li>
+        <li>HAVING allows us to introduce WHERE clauses based on the aggregate behavior under a GROUP BY setting. For example we can list only those albums whose total duration exceeds 45 minutes.</li>
+        <li>There are numerous functions available to us, that allow us to transform some of the values before showing them. For example we can concatenate string values, do arithmetic etc. You can find a lot of the different kinds of functions and what they do on the <url href="https://www.sqlite.org/docs.html">SQLite3 docs</url>.</li>
+      </ul>
+      Let's get started.
+    </p>
+    <paragraphs>
+      <title>Grouping and aggregation</title>
+      <p>
+        One key operation we can perform is that of grouping together those rows that have something in common. E.g. we can group together all albums with the same ArtistId. We then want to request a single row entry for the whole group.
+      </p>
+      <p>
+        This only really works if the only things we ask in that aggregated entry are either values that are all the same within a group or are a combination of the values in the group. For example here are two such queries. The first computes the number of albums for each artist id, the other computes the total duration for each album id:
+      </p>
+      <program language="sql">
+        SELECT ArtistId, COUNT(*) as albumNo
+          FROM Album
+          GROUP BY ArtistId;
+
+        SELECT AlbumId, SUM(Milliseconds) as duration
+          FROM Track
+          GROUP BY AlbumId;
+
+        # In seconds instead
+        SELECT AlbumId, SUM(Milliseconds) / 1000 as duration
+          FROM Track
+          GROUP BY AlbumId;
+      </program>
+      <exercise>
+        <p>Compute the number of tracks on each playlist.</p>
+      </exercise>
+      <exercise>
+        <p>Compute the number of tracks for each Genre.</p>
+      </exercise>
+      <exercise>
+        <p>Compute the number of tracks for each artist id. You will need to combine some tables for this.</p>
+      </exercise>
+      <exercise>
+        <p>For every artist and genre, count the number of tracks this artist has in that genre.</p>
+      </exercise>
+      <p>
+        There are a few more aggregate functions we can use, and different databases may offer more, but here are the aggregate functions <url href="https://www.sqlite.org/lang_aggfunc.html">available in SQLite3</url>.
+      </p>
+      <p>
+        While in the topic of group by, it is worth looking at HAVING. HAVING allows us to impose a condition on the output of the GROUP BY. For example we could ask to only see those artist ids who have more than 1 album:
+      </p>
+      <program language="sql">
+        SELECT ArtistId, COUNT(*) as albumNo
+        FROM Album
+        GROUP BY ArtistId
+        HAVING albumNo > 1;
+      </program>
+      <p>
+        We could not do this with a WHERE clause because a WHERE clause always refers to the original rows.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>ORDER BY</title>
+      <p>
+        A common thing we might want to do is order our results in some way. For example in the query we just saw, we may want to order the artists based on the number of albums. This is what the ORDER BY clause is about, and it accepts any sequence of ordering conditions, and for each you can indicate if you want it to work descending (DESC) or ascending (ASC), the default being ascending. It works both in grouping situations as well as normal.
+      </p>
+      <program language="sql">
+        SELECT ArtistId, COUNT(*) as albumNo
+        FROM Album
+        GROUP BY ArtistId
+        HAVING albumNo > 1
+        ORDER BY albumNo;  -- Ascending by default
+
+        SELECT ArtistId, COUNT(*) as albumNo
+        FROM Album
+        GROUP BY ArtistId
+        HAVING albumNo > 1
+        ORDER BY albumNo DESC;  -- Descending
+      </program>
+      <p>
+        You can also use LIMIT to limit the amount of results you get back.
+      </p>
+      <exercise>
+        <p>List tracks that last more than 2 minutes, ordered by duration starting with the longest.</p>
+      </exercise>
+    </paragraphs>
+    <paragraphs>
+      <title>Subqueries</title>
+      <p>A subquery is a way to generate something dynamically based on other table information. They can be used in a few different places, e.g. as part of the resulting columns computation at the beginning of a SELECT clause, or inside of the condition in a WHERE clause.</p>
+      <p>
+        As an example, here is a query that has a row for each artist and in that row it shows the number of albums, number of tracks, and total duration (in minutes) that the artist has composed. This can be done in other ways, but it shows some of the potential of subqueries:
+      </p>
+      <program language="sql">
+        SELECT ar.Name,
+          (SELECT COUNT(*)
+            FROM Album
+            WHERE ArtistId = ar.ArtistId) as albums,
+          (SELECT COUNT(*)
+            FROM Album as al, Track t
+            WHERE al.ArtistId = ar.ArtistId
+            AND t.AlbumId = al.AlbumId) as tracks,
+          (SELECT SUM(t.Milliseconds) / 60000
+            FROM Album as al, Track t
+            WHERE al.ArtistId = ar.ArtistId
+            AND t.AlbumId = al.AlbumId) as minutes
+        FROM Artist as ar;
+      </program>
+      <p>
+        As another example, let's find all tracks from albums where at least one of the tracks in the album corresponds to the Genre named "Blues". It's not the most interesting example as there are no non-blues tracks that show up. But there could have been.
+      </p>
+      <program language="sql">
+        SELECT * FROM Track t
+        WHERE t.TrackId IN (SELECT TrackId
+                              FROM Track t, Genre g
+                              WHERE t.GenreId = g.GenreId
+                              AND g.Name = 'Blues');
+      </program>
+    </paragraphs>
+  </subsubsection>
+  <exercises xml:id="exercises-basics-sql">
+    <introduction>
+      <p>In this series of problems you will be creating a new database. Make sure you exit sqlite and start new with something like <c>sqlite3 grades.sqlite</c>. This will start a new blank database. We will use this database to store student grades.</p>
+      <p>
+        You should also have a <c>grades.sql</c> file that you use to type your commands and then copy-paste them into sqlite3.
+      </p>
+    </introduction>
+    <exercise>
+      <p>Create a table called <c>grade_points</c> that has two columns: The first column is called <c>letter</c>, it should be set as VARCHAR(2) and it should be set as primary key. The other column is called <c>points</c> and it should be set to be FLOAT type and not null, with a default value of 0.0. Use an INSERT statement to populate the table with the common letter grade mappings.</p>
+    </exercise>
+    <exercise>
+      <p>Create a table called <c>grades</c> that stores a student's grades and it has four columns: The student username (type TEXT, not null), the course (type TEXT, not null), the term (type TEXT, not null), and the grade (type VARCHAR(2), allowed to be null). The table should have as primary key the pair of student username and course. It should also have a foreign key where the grade column references the corresponding column in the <c>grade_points</c> table. Use INSERT to add a few entries (use at least a few different students, courses and terms, your aggregates later will be more interesting that way).</p>
+    </exercise>
+    <exercise>
+      <p>
+        Write a query that shows for each student the number of courses they have, a query that shows for each course the number of students it has, and a query that shows for each term the number of enrollments it had. List the courses in terms of their popularity (highest enrollment first).
+      </p>
+    </exercise>
+    <exercise>
+      <p>Write a query that computes each student's total points earned.</p>
+    </exercise>
+    <exercise>
+      <p>Write a query that computes each student's GPA. Make it list the students in descending order of GPA.</p>
+    </exercise>
+    <exercise>
+      <p>List the courses ordered in terms of their "difficulty" (lowest average course grade).</p>
+    </exercise>
+    <exercise>
+      <p>List all the grades ordered so that they are first ordered by term and then with highest grade first.</p>
+    </exercise>
+    <exercise>
+      <p>List all students that have only As and A-s.</p>
+    </exercise>
+    <exercise>
+      <p>List all pairs of students that have a class together. List each pair once.</p>
+    </exercise>
+    <exercise>
+      <p>List one row per student where one entry is the student's username and the other entry is the list of all the student's courses, concatenated and separated by space or comma. You'll need to review the aggregate functions for this.</p>
+    </exercise>
+  </exercises>
+</subsection>
