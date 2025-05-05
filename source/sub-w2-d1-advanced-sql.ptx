@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-advanced-sql">
+  <title>Advanced SQL topics</title>
+  <subsubsection xml:id="subsubsec-sql-joins">
+    <title>SQL Joins</title>
+    <p>
+      We discuss now the general process of <term>table joins</term>, i.e. ways of combining two tables into one. We already saw a way to combine tables on their foreign keys, using a suitable WHERE clause. We will start by seeing an easier way to write that, then explore other kinds of joins.
+    </p>
+    <paragraphs>
+      <title>Inner Joins</title>
+      <p>
+        Let's review one of our basic examples of joining tables, say we want to count how many albums each artist had. Here is the query for that:
+      </p>
+      <program language="sql">
+        SELECT ar.Name, COUNT(al.AlbumId) AS albums
+        FROM Artist as ar, Album as al
+        WHERE al.ArtistId = ar.ArtistId
+        GROUP BY ar.ArtistId;
+      </program>
+      <p>
+        This works, reasonably well. Note however that it does not show you any artists that have no albums in the database. This is because we explicitly only linked together artists and albums when there was an artist ID in common. So this is one kind of table join, where we only consider combinations that exist on both tables. It is known as a <term>Inner Join</term>. We can express this in a "shortcut" notation avoiding the WHERE clause:
+      </p>
+      <program language="sql">
+        SELECT ar.Name, COUNT(al.AlbumId) AS albums
+        FROM Artist as ar
+          INNER JOIN Album as al ON al.ArtistId = ar.ArtistId
+          -- also: JOIN Album as al ON al.ArtistId = ar.ArtistId
+          GROUP BY ar.ArtistId;
+      </program>
+      <p>
+        Since these joins are so common, we can create them without using the INNER keyword, simply using JOIN.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Outer Joins</title>
+      <p>
+        The alternative to inner joins is what are known generally as outer joins, and they come in three flavors. As an example, suppose we wanted to include a row for each artist, regardless of whether they have any albums or not. The question obviously becomes: What values should we assign to the columns that came from the album table, since we don't have anything to match?
+      </p>
+      <p>
+        There are a couple of ways to approach this, so we will see three different solutions. The first uses a subquery, that for each artist counts how many albums have that artist as their artist:
+      </p>
+      <program language="sql">
+        SELECT ar.Name,
+            (SELECT COUNT(al.AlbumId)
+              FROM Album as al
+              WHERE al.ArtistId = ar.ArtistId)
+            AS albums
+        FROM Artist as ar
+        ORDER BY ar.Name;
+      </program>
+      <p>
+        Subqueries can get expensive though. Another approach uses a new keyword called <term>UNION</term>, which attempts to join two SELECT queries together. These queries must have the same column shape. In the example below, the SELECT query that follows the UNION keyword aims to find all those artists who don't have any albums corresponding to them. We do it by using the WHERE NOT EXISTS clause that is true when what follows it has no matches.
+      </p>
+      <program language="sql">
+        SELECT ar.Name, COUNT(al.AlbumId) AS albums
+        FROM Artist AS ar
+          INNER JOIN Album AS al ON al.ArtistId = ar.ArtistId
+          -- also: JOIN Album AS al ON al.ArtistId = ar.ArtistId
+          GROUP BY ar.ArtistId
+        UNION
+        SELECT ar.Name, 0
+        FROM Artist AS ar
+        WHERE NOT EXISTS (SELECT al.ArtistId
+                          FROM Album al
+                          WHERE al.ArtistId = ar.ArtistId);
+      </program>
+      <p>
+        There is another way to do the second query, by asking for the artist id to NOT be IN the list of artist ids that are in albums:
+      </p>
+      <program language="sql">
+        SELECT ar.Name, COUNT(al.AlbumId) AS albums
+        FROM Artist AS ar
+          INNER JOIN Album AS al ON al.ArtistId = ar.ArtistId
+          -- also: JOIN Album AS al ON al.ArtistId = ar.ArtistId
+          GROUP BY ar.ArtistId
+        UNION
+        SELECT ar.Name, 0
+        FROM Artist AS ar
+        WHERE ar.ArtistId NOT IN (SELECT al.ArtistId
+                                  FROM Album al);
+      </program>
+      <p>
+        In either case, note that the results have now been ordered alphabetically by name. If we had included an artist id column, we could have probably preserved that id ordering.
+      </p>
+      <p>
+        These all look somewhat complicated, and for many cases an easier variant exists using the <term>LEFT JOIN</term> keyword. This tells the system to perform a join, but also including rows for those entries in the first table that have no matches in the second table, and filling the rest with NULL. Here's how that would look like:
+      </p>
+      <program language="sql">
+        SELECT ar.Name, COUNT(al.AlbumId) AS albums
+        FROM Artist as ar
+          LEFT JOIN Album as al ON al.ArtistId = ar.ArtistId
+          GROUP BY ar.ArtistId;
+      </program>
+      <p>
+        There is a similar variant called <term>RIGHT JOIN</term> that instead preserves the extra entries on the right table. There is also a <term>OUTER JOIN</term> that preserves both the left extra entries and the right extra entries. These are less common.
+      </p>
+    </paragraphs>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-sql-normalization">
+    <title>Normalization</title>
+    <p>
+      Database table <term>normalization</term> is the process of breaking a table into multiple tables, with the primary goal of reducing duplication of information. As an example imagine an altered version of our music database example, where we have essentially one table containing almost all the information:
+    </p>
+    <program language="sql">
+        SELECT tr.Name as song, al.Title as album,
+          ar.Name as artist, g.Name as genre,
+          GROUP_CONCAT(CONCAT_WS(': ', pl.PlaylistId, pl.Name), ', ') as playlists
+        FROM Track tr
+          JOIN Album al ON al.AlbumId = tr.AlbumId
+          JOIN Artist ar ON al.ArtistId = ar.ArtistId
+          JOIN Genre g ON g.GenreId = tr.GenreId
+          JOIN PlaylistTrack plt ON plt.TrackId = tr.TrackId
+          JOIN Playlist pl ON pl.PlaylistId = plt.PlaylistId
+          GROUP BY tr.TrackId;
+    </program>
+    <p>
+      We have omitted a lot to keep the example manageable. Here's how this would look like:
+    </p>
+    <tabular>
+      <col width="20%" />
+      <col width="20%" />
+      <col width="10%" />
+      <col width="10%" />
+      <col width="40%" />
+      <row header="yes">
+        <cell>Song</cell>
+        <cell>Album</cell>
+        <cell>Artist</cell>
+        <cell>Genre</cell>
+        <cell>Playlists</cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>For Those About To Rock (We Salute You)</p></cell>
+        <cell><p>For Those About To Rock We Salute You</p></cell>
+        <cell><p>AC/DC</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>1: Music, 8: Music, 17: Heavy Metal Classic</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Accept</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>1: Music, 8: Music, 17: Heavy Metal Classic</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>Fast As a Shark</p></cell>
+        <cell><p>Restless and Wild</p></cell>
+        <cell><p>Accept</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>1: Music, 5: 90’s Music, 8: Music, 17: Heavy Metal Classic</p></cell>
+      </row>
+      <row>
+        <cell><p>Restless and Wild</p></cell>
+        <cell><p>Restless and Wild</p></cell>
+        <cell><p>Accept</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>1: Music, 5: 90’s Music, 8: Music, 17: Heavy Metal Classic</p></cell>
+      </row>
+    </tabular>
+    <p>
+      In some ways this data is in a nice form, in terms of providing us the information we need. But from the point of view of maintenance it's a bit of a nuisance. If we discover that we have misspelled an album title, we have to actually change the title in multiple locations, way too many locations in fact. Or if we want to add a playlist to the mix, we'll have to somehow edit this long string that describes the playlists. Normalization is essentially the process of taking data in this form, and breaking it up into multiple tables linked to each other, so as to avoid all instances of duplication.
+    </p>
+    <p>
+      We'll take a look at some of the so-called <term>normal forms</term> in the following paragraphs.
+    </p>
+    <paragraphs>
+      <title>First Normal Form (1NF)</title>
+      <p>
+        The first normal form asks that there should be no entries in the table that actually hold what is more than one value. In our example the <c>playlists</c> column suffers from this problem. It actually contains what is potentially many values, as a track can belong to many different playlists. This makes it harder to programmatically answer the question on which tracks belong to a particular playlist. The solution to this is simple if a bit painful in the short run: Have separate rows in the data for each track and each playlist. So a track will show up once for each playlist it belongs to. We could have produced the corresponding table by essentially avoiding the GROUP BY part in our early query. And here is how our data might look like:
+      </p>
+          <tabular>
+      <col width="20%" />
+      <col width="20%" />
+      <col width="10%" />
+      <col width="10%" />
+      <col width="10%" />
+      <col width="20%" />
+      <row header="yes">
+        <cell>Song</cell>
+        <cell>Album</cell>
+        <cell>Artist</cell>
+        <cell>Genre</cell>
+        <cell>Playlist Id</cell>
+        <cell>Playlist Name</cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>For Those About To Rock (We Salute You)</p></cell>
+        <cell><p>For Those About To Rock We Salute You</p></cell>
+        <cell><p>AC/DC</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>1</p></cell>
+        <cell><p>Music</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>For Those About To Rock (We Salute You)</p></cell>
+        <cell><p>For Those About To Rock We Salute You</p></cell>
+        <cell><p>AC/DC</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>8</p></cell>
+        <cell><p>Music</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>For Those About To Rock (We Salute You)</p></cell>
+        <cell><p>For Those About To Rock We Salute You</p></cell>
+        <cell><p>AC/DC</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>17</p></cell>
+        <cell><p>Heavy Metal Classic</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Accept</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>1</p></cell>
+        <cell><p>Music</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Accept</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>8</p></cell>
+        <cell><p>Music</p></cell>
+      </row>
+      <row bottom="minor">
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Balls to the Wall</p></cell>
+        <cell><p>Accept</p></cell>
+        <cell><p>Rock</p></cell>
+        <cell><p>17</p></cell>
+        <cell><p>Heavy Metal Classic</p></cell>
+      </row>
+    </tabular>
+    <p>
+      If our code doesn't suffer from this type of problem of multiple values in a single table entry, it is said to be in <q>first normal form</q>.
+    </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Second Normal Form (2NF)</title>
+      <p>
+        The second normal form says that we should not have any <term>partial dependencies</term>. To understand what that means let's first consider what <q>dependency</q> means in this context. A column Y is said to depend on a column X, if the value in column Y can be completely inferred by the value in column X, i.e. if there are no instances where the same value in column X results in two different values in column Y. In our example, the album column depends on the track column, and the artist column depends on the album column, as some examples.</p>
+      <p>Next consider what our primary key would be in the above table. What identifies a particular row in our data is the combination of the playlist id and the track name, so we might say that our primary key is <c>(trackName, playlistId)</c>. A partial dependency would represent a dependency of a non-key column to a part of the primary key. For example the playlist name only depends on the playlistId, and the artist name, album title, and genre only depend on the track name. These are both examples of partial dependencies. A database in second normal form is supposed to not have such dependencies.
+      </p>
+      <p>
+        To achieve this goal, what we need to do is basically move all the columns that depend only on <c>trackName</c> into their own table, with <c>trackName</c> as the key, and move the <c>playlistName</c> into its own table keyed by the <c>playlistId</c>. So after this transformation we would have three tables:
+        <ul>
+          <li>A table with key <c>trackName</c> and other columns for <c>album</c>, <c>artist</c> and <c>genre</c>. The first three rows from the example above would become one entry in this table.</li>
+          <li>A table with key <c>playlistId</c> and another column for <c>playlistName</c>. This is basically the <c>Playlist</c> table of our database.</li>
+          <li>A table with the combined key <c>(trackName, playlistId)</c> and no other columns. Except for the fact that it uses the track name instead of a track id, this is basically the <c>PlaylistTrack</c> table of our database.</li>
+        </ul>
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Third Normal Form (3NF)</title>
+      <p>
+        The third normal form is about eliminating transitive dependencies. A <term>transitive dependency</term> occurs when a non-primary-key column depends on another non-primary-key column. In our example the table that is keyed by the track name has the following property: The artist is completely determined by the album. This is a transitive dependency since the album is not part of the key for that table. The reason this is called <em>transitive dependency</em> is because the artist depends on the primary key via the fact that it depends on the album, and not for some other more direct reason.
+      </p>
+      <p>
+        To eliminate transitive dependencies, we need to essentially create new tables keyed by the elements that were depended upon. In this case we would need to create a table for the albums, basically. So we would now have:
+        <ul>
+          <li>A table with key <c>trackName</c> and other columns for <c>album</c> and <c>genre</c>.</li>
+          <li>A table with key <c>album</c> and other column for <c>artist</c>.</li>
+          <li>A table with key <c>playlistId</c> and another column for <c>playlistName</c>. This is basically the <c>Playlist</c> table of our database.</li>
+          <li>A table with the combined key <c>(trackName, playlistId)</c> and no other columns. Except for the fact that it uses the track name instead of a track id, this is basically the <c>PlaylistTrack</c> table of our database.</li>
+        </ul>
+      </p>
+    </paragraphs>
+    <p>
+      There are a few more forms but we will stop there. Except for the fact of introducing ids for the albums, tracks and artists, this is effectively our current setup. In any case, hopefully this gave you a bit of an idea of what normalization is about.
+      <ul>
+        <li>Advantages: No duplication of text, easier to change something, queries more efficient</li>
+        <li>Disadvantages: Often requires complex joins to get to an answer.</li>
+      </ul>
+    </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-indexes">
+    <title>Indexes</title>
+    <p>
+      The final advanced topic we will discuss is that of indexes. An <term>index</term> is a specialized structure that allows for efficient querying of information about a particular column (or combination of columns). In the absence of an index, a query that is looking for all rows with a particular value in that column would have to actually look at all the rows one by one, and weed out those that don't match. With an index, we can zero in on the answer much quicker. Essentially the index keeps track of information about exactly where different values can be found.
+    </p>
+    <p>
+      We will not discuss indexes further, but here are some key things to know about indexes:
+      <ul>
+        <li>The plural is actually <q>indexes</q> when used in this context (as opposed to the index <c>i</c> into an array, for example, where the plural is <q>indices</q>).</li>
+        <li>An index speeds up SELECT queries that involve the particular column.</li>
+        <li>An index takes up extra space, because it needs to store a lot of extra information.</li>
+        <li>An index slightly slows down CREATE, UPDATE and DELETE queries, as it needs to be updated after each of these queries.</li>
+        <li>Typically you only benefit if the query would return a relatively small number of hits compared to overall table.</li>
+      </ul>
+    </p>
+  </subsubsection>
+</subsection>

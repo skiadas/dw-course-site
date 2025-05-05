@@ -2,15 +2,7 @@
 
 <chapter xml:id="ch-week-2" xmlns:xi="http://www.w3.org/2001/XInclude">
   <title>Week 2</title>
-  <section xml:id="sec-week-2-day-1">
-    <title>Monday</title>
-    <p>
-      <ul>
-        <li>olap vs oltp</li>
-        <li>duckdb</li>
-      </ul>
-    </p>
-  </section>
+  <xi:include href="sec-w2-d1.ptx" />
   <section xml:id="sec-week-2-day-2">
     <title>Tuesday</title>
     <p>

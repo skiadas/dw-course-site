@@ -2,13 +2,16 @@
 
 <section xml:id="sec-week-2-day-1" xmlns:xi="http://www.w3.org/2001/XInclude">
   <title>Monday</title>
-  <p>
-
-    <ul>
-      <li>SQL advanced: normalization</li>
-      <li>SQL advanced: indexes, subqueries</li>
-      <li>Activity: SQL advanced 2</li>
-      <li>Week 1 wrap-up</li>
-    </ul>
-  </p>
+  <introduction>
+    <p>
+      <ul>
+        <li>SQL advanced: joins</li>
+        <li>SQL advanced: normalization</li>
+        <li>SQL advanced: indexes</li>
+        <li>Activity: SQL advanced 2</li>
+        <li>Week 1 wrap-up</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w2-d1-advanced-sql.ptx" />
 </section>
