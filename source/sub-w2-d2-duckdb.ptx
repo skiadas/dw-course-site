@@ -138,4 +138,21 @@
       The result can then be processed in many ways. The simplest for us is to call <c>res.fetchall()</c> to get back a list of tuples.
     </p>
   </subsubsection>
+  <subsubsection xml:id="subsubsec-example-loading-world-bank-data">
+    <title>Example: Loading World Bank Data</title>
+    <p>
+      In this section we will write a program to read in data from the world bank then store it for future use. This will bring together some of our earlier work, with httpx to get stuff from an API, a little bit of json, then some duckdb.
+    </p>
+    <p>
+      Our main source is the <url href="https://data360.worldbank.org/en/api">Data360 API</url>. It has a lot of information available to it and would take some time to learn it all, but we will start with a request to find out about the different indicators. Note a bit down the page one of the endpoints called indicators. we will call on that endpoint to get a list of the indicator IDs. Looking at the endpoint we come up with the following:
+    </p>
+    <program language="python">
+      baseUrl = "https://data360api.worldbank.org/data360"
+      indicatorsEndpoint = f"{baseUrl}/indicators?datasetId=WB_WDI"
+      indicators: list[str] = httpx.get(indicatorsEndpoint).json()
+    </program>
+    <p>
+      Next we would like to learn information about each indicator. There is a metadata endpoint we can use for that. If you look at its details, it requires that we provide a query json with what we want, and it has some weird syntax that we will just use.
+    </p>
+  </subsubsection>
 </subsection>

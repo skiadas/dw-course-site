@@ -11,4 +11,5 @@
     </p>
   </introduction>
   <xi:include href="sub-w2-d2-sql-from-python.ptx" />
+  <xi:include href="sub-w2-d2-duckdb.ptx" />
 </section>
