@@ -3,8 +3,9 @@
 <chapter xml:id="ch-week-2" xmlns:xi="http://www.w3.org/2001/XInclude">
   <title>Week 2</title>
   <xi:include href="sec-w2-d1.ptx" />
-  <section xml:id="sec-week-2-day-2">
-    <title>Tuesday</title>
+  <xi:include href="sec-w2-d2.ptx" />
+  <section xml:id="sec-week-2-day-3">
+    <title>Wednesday</title>
     <p>
       <ul>
         <li>Distributed databases: replication, sharding, read/write consistency</li>
@@ -12,9 +13,6 @@
         <li>CAP theorem, BASE vs ACID</li>
       </ul>
     </p>
-  </section>
-  <section xml:id="sec-week-2-day-3">
-    <title>Wednesday</title>
     <p>
       <ul>
         <li>SQLAlchemy</li>

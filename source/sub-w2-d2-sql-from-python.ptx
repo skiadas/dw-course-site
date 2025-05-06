@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-sql-from-python">
+  <title>SQL in Python</title>
+  <introduction>
+    <p>
+      We will now take a look at the basic mechanism for accessing a database from a language like Python. Each language will have its own approach, but typically there are two kinds of solutions:
+      <ul>
+        <li>A library that is specific to the particular database vendor you want to use, like sqlite3 for us. These libraries are typically responsible for simply allowing us to put SQL queries in a string and execute them. But they take care of some lower-level stuff like actually communicating with the corresponding database program.</li>
+        <li>A higher-level library that allows us to code in a database-program-agnostic way, and allows us to integrate with many different database programs using the same set of tools on our end. These libraries often also provide ways to automatically turn database rows into some kind of object. SQLAlchemy and PonyORM are some standard such tools for Python, and we'll take a look at them later.</li>
+      </ul>
+      For now we'll focus on the first part: Direct interaction with a database using a library designed for it.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-sqlite-in-python">
+    <title>SQLite in Python</title>
+    <p>Basic access to SQLite3 from Python can be obtained using the <url href="https://docs.python.org/3/library/sqlite3.html">sqlite3</url> library. There are typically a few steps involved:
+      <ul>
+        <li>Use the <c>sqlite3.connect(...)</c> function to obtain a <term>connection</term> to a specific database.</li>
+        <li>Obtain a <term>cursor</term> object from the connection using <c>con.cursor()</c>.</li>
+        <li>Use the cursor object to issue queries using <c>cur.execute(...)</c>.</li>
+        <li>Call suitable methods on the result object, to read whatever data is needed. The result will typically be a tuple or a list of tuples, depending on whether you asked for one or more answers.</li>
+      </ul>
+      Here is a simple example for our database:
+    </p>
+    <program language="python">
+      import sqlite3
+
+      con = sqlite3.connect('chinook.sqlite')
+      cur = con.cursor()
+      res = cur.execute("SELECT * FROM Album")
+      albums = res.fetchall()   # get all matches
+      # Use res.fetchone() for only one match
+      # albums is a list of tuples
+      for album in albums:
+          print(album)
+
+      for albumId, title, artistId in albums:
+          print(albumId, title, artistId)
+    </program>
+    <p>Note that we didn't need to place a semicolon at the end. </p>
+    <p>An important question to consider is how to insert entries. Here's one way this might look like:</p>
+    <program language="python">
+      cur.execute("""INSERT INTO grade_points VALUES
+          ('A', 4.0),
+          ('A-', 3.67);
+      """)
+    </program>
+    <p>
+      However there is an important topic to consider, called <term>SQL injection</term>. Imagine that instead of literally typing out the letters and corresponding values, you were somehow instead obtaining them from user input. If the user was malicious, they could insert the appropriate text so that they change the command, and instead call out a different command. For example imagine that the user was providing us with the `A` part in `'A'`, and we were inserting it in using some sort of string concatenation. Imagine something like:
+    </p>
+    <program language="python">
+      letter = input("Enter letter")
+      points = input("Enter points")
+      cur.execute(f"INSERT INTO grade_points VALUES ('{letter}', {points})");
+    </program>
+    <p>
+      Now what would happen if the "letter" the user types is the string: <c>A', 1.00); DROP TABLE grade_points; --</c>.
+      Then the the query would become:
+    </p>
+    <program language="sql">
+      INSERT INTO grade_points VALUES ('A', 1.00); DROP TABLE grade_points; -- ...
+    </program>
+    <p>
+      This program, when run, would perform the insertion of one entry, then immediately execute the DROP TABLE command which deletes the whole table. This is extremely dangerous, and a major security flaw! And it is commemorated in the classic xkcd comic strip:
+    </p>
+    <image source="https://xkcd.com/327/">
+      <shortdescription>XKCD exploits of a mom. Comic about the dangers of SQL injection.</shortdescription>
+    </image>
+    <p>
+      Luckily there is a solution, using <term>parametrized queries</term>. A parametrized query contains <em>placeholders</em> instead of the actual values, and the values are provided as an extra parameter to the function call. It is then the machine's job to properly execute such a query. Here is an example of this:
+    </p>
+    <program language="python">
+      grade_points = [
+          ("A", 4.00), ("A-", 3.67),
+          ("B+", 3.33), ("B", 3.0), ("B-", 2.67),
+          ("C+", 2.33), ("C", 2.00), ("C-", 1.67),
+          ("D+", 1.33), ("D", 1.00),
+          ("F", 0.00)
+      ]
+      con.executemany("INSERT INTO grade_points VALUES (?, ?)", grade_points)
+      con.commit()  # IMPORTANT! MUST COMMIT THE CONNECTION
+    </program>
+    <p>
+      As this is the first time we see an insert statement executed, note one important detail: We must call the connection's <c>close</c> method in order to have our changes actually recorded. This is because the system automatically creates a transaction when we call <c>executemany</c>. If we are performing a SELECT then it doesn't matter, but for other operations we need to make sure to close when we are done. But note that the danger of SQL injections is present in SELECT queries as well, and the placeholder should be used there as well.
+    </p>
+    <p>
+      Also note that we called <c>executemany</c> on the connection object, not a cursor object. This is possible to do, and it returns a cursor object.
+    </p>
+  </subsubsection>
+    <exercises>
+      <exercise>
+        <p>
+          Create the python code that creates the <c>grades</c> table from the earlier set of exercises.
+        </p>
+      </exercise>
+      <exercise>
+        <p>
+          Assuming the list of <c>grade_points</c> list created above, write a function <c>randomGrade()</c> that returns a random letter grade from that list (so pick a random tuple from the list, then return its first entry). The common way to get a random entry from a list is: Use <c>random()</c> to get a random number between 0 and 1, multiply it by the length of the list (say n) to get a random number between 0 and n, then take the <c>math.floor(..)</c> of that to obtain an integer from 0 to n-1. Note: This problem has nothing to do with databases, it is a basic Python function.
+        </p>
+      </exercise>
+      <exercise>
+        <p>
+          For this and subsequent problems assume the following definitions:
+        </p>
+        <program language="python">
+          students = ["wahl", "skiadas", "lamarche"]
+          courses = ["CS220", "CS223", "CS110", "CS243"]
+          terms = [f"{period} {year}" for period in ["Fall", "Winter"] for year in range(2020, 2025)]
+        </program>
+        <p>
+          Write a function <c>randomTerm()</c> that returns a random term. This is similar to the previous problem.
+        </p>
+      </exercise>
+      <exercise>
+        <p>
+          Use a list comprehension that for each student and each course forms a tuple <c>(student, course, term, grade)</c> with a randomly generated term and grade using the previous functions. Your list comprehension should also have a 20% chance to not produce a grade for a particular student-course combination. You can do this by expecting that the result of a call to <c>random()</c> should be less than than 0.8. Since the random numbers go from 0 to 1 uniformly, 80% of them will be below 0.8.
+        </p>
+        <p>
+          Store the result of this list comprehension to a variable called <c>grades</c>.
+        </p>
+      </exercise>
+      <exercise>
+        <p>
+          Write Python code to insert all these grades from the previous problem into the sqlite database we have been working with. Make sure you use parametrized query for this.
+        </p>
+      </exercise>
+      <exercise>
+        <p>
+          Write a separate program that starts by showing to the user all the students (by reading them from the database table, not the specific list we created earlier). Then it asks the user to pick a student name, and it retrieves all the grades for that student from the database, and prints them out in some basic tabular form.
+        </p>
+        <p>
+          Once you have that working out, also report the average gpa for that student (computed directly from the database query). This is a good case for using <c>fetchone</c> instead of <c>fetchmany</c>. Make sure to again use a parametrized query.
+        </p>
+      </exercise>
+    </exercises>
+</subsection>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-2-day-2" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Tuesday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>SQL from Python</li>
+        <li>duckdb</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w2-d2-sql-from-python.ptx" />
+</section>
