@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-sql-duckdb">
+  <title>DuckDb</title>
+  <introduction>
+    <p>
+      We will now take a look at another data system called <url href="https://duckdb.org/">DuckDb</url>. It is in some ways similar to sqlite3, with two important differences:
+      <ul>
+        <li>It is more of a <em>data warehouse</em> than a database. It is particularly efficient at working with existing data.</li>
+        <li>It is a fairly small source code, essentially a single C++ file, and as a result it can be fully run within the source program, without needing a separate process.</li>
+        <li>For the same reasons, it has very rich support in many languages, including Python.</li>
+      </ul>
+      We will focus on the duckdb support in Python.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-duckdb-basics">
+    <title>The basics of DuckDb in Python</title>
+    <p>
+      Within Python starting out with DuckDb is easy, and similar to sqlite3:
+    </p>
+    <program language="python">
+      import duckdb
+
+      con = duckdb.connect("chinook.duckdb")     # Database doesn't exist yet, we'll create it
+      with open("chinook-dump-fixed.sql") as f:  # Read and execute the dump file
+          con.sql(f.read())
+      con.close()
+    </program>
+    <p>
+      We see here the basics are not too different. We use <c>.connect(...)</c> to connect to a database (if you don't specify a file then it uses an in-memory-only database), then we can use <c>con.sql(...)</c> to execute an SQL instruction. In this case the instruction is that entire SQL dump we worked hard to create. Lastly, you close the connection.
+    </p>
+    <p>
+      At later points you can simply open that database and you'll have all the data available.
+    </p>
+    <p>
+      <url href="https://duckdb.org/docs/stable/data/csv/overview">Loading a CSV file</url> can be quite simple, directly into the sql command:
+    </p>
+    <program language="python">
+      con.sql("CREATE TABLE albums AS SELECT * FROM 'albums.csv';")
+    </program>
+    <p>
+      We can query data by simply writing SELECT queries like we are used to:
+    </p>
+    <program language="python">
+      res = con.sql("SELECT Title from Album");
+    </program>
+    <p>
+      The result can then be processed in many ways. The simplest for us is to call <c>res.fetchall()</c> to get back a list of tuples.
+    </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-duckdb-as-an-in-memory-database">
+    <title>DuckDb as an in-memory database</title>
+    <p>
+      One of the nice features of DuckDb is that it can function purely as an in-memory database. So you can use it to load some stuff then work with it. The result of each query is a "relation" and you can then query these relations using that name. Here is an example:
+    </p>
+    <program language="python">
+      albums = duckdb.read_csv("albums.csv")
+      res = duckdb.sql("SELECT * FROM albums")
+      res.fetchall()
+    </program>
+    <p>
+      This is a somewhat weird feature of duckdb: The name you assign to the result of the query can be used inside your SQL queries. The database actually knows that name! You can also do it the old-fashioned way with the CREATE TABLE command we saw earlier. But this is certainly a cool feature of duckdb, and it is technically referred to as <term>replacement scans</term>.
+    </p>
+    <p>
+      The key point of this section though is: For some use-cases you can use the in-memory database that duckdb provides. This never gets written on disk. So you either use <c>duckdb</c> directly to make queries and work with the global in-memory database, or you use <c>con = duckdb.connect(...)</c> to create a particular connection to a file-based database, then use that connection.
+    </p>
+  </subsubsection>
+</subsection>

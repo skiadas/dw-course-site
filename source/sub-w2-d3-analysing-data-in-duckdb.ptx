@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-sql-analysing-with-duckdb">
+  <title>Practical example: Analysing the data with Duckdb</title>
+    <p>
+      In this section we will now analyze a bit the data we stored, using duckdb as our main tool. Things we will see how to do:
+      <ul>
+        <li>Filtering rows using WHERE. We already know how to do that.</li>
+        <li>Obtaining a subset of the columns. We also already know how to do that.</li>
+        <li>Computing aggregates across grouped values. This is also practice of known things.</li>
+        <li>One new idea is that of <term>pivoting</term>. Pivoting allows you to turn values along a column into different columns. It will make more sense when we get to an example. This is a feature of many spreadsheet programs, and it is also a SQL feature, but not supported by SQLite3.</li>
+      </ul>
+      Let's get started. You'll want to start a new file for this.
+    </p>
+    <paragraphs>
+      <title>Filtering rows and columns</title>
+      <p>
+        Let's start by retrieving our data by opening the database. Then we want to find out all the country entries only, or actually what the world bank refers to as "reference areas", they are not all countries.
+      </p>
+      <program language="python">
+        con = duckdb.connect("worldbankdata.duckdb")
+
+        areas = con.sql("SELECT distinct REF_AREA_ID, REF_AREA_NAME FROM worldbankdata ORDER BY REF_AREA_ID")
+        con.sql("COPY areas to 'areas.csv' (HEADER, SEPARATOR ',')")
+      </program>
+      <p>
+        What we want to do now is pick a few countries to compare. I will pick USA and Germany.
+      </p>
+      <program language="python">
+        countries = ["USA", "DEU"]
+        data = con.sql("""SELECT REF_AREA_ID, INDICATOR_ID, TIME_PERIOD, OBS_VALUE
+              FROM worldbankdata
+              WHERE REF_AREA_ID IN ?
+              ORDER BY INDICATOR_ID, TIME_PERIOD, REF_AREA_ID
+        """, params= [countries])
+      print(data)
+      </program>
+      <p>
+        We can look at this data and maybe make sense of it all. But to do much more we'll probably want to start placing the different indicators into different columns. That's the job of pivoting.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Pivoting</title>
+      <p>
+        Pivoting, and its inverse operation of unpivoting, are important ways of restructuring data, and a core of the practice of "data wrangling". We will merely scratch the surface here.
+      </p>
+      <p>
+        The idea of pivoting is this:
+        <ul>
+          <li>You decide for one variable to provide the new columns. In our case the different indicators, so the INDICATOR_ID variable, will serve that purpose.</li>
+          <li>You decide how you will compute the corresponding value. In our case this will be the OBS_VALUE, but we need to also decide on an aggregating function in case we had to combine multiple values. We will use <c>first</c> to just pick the first and only value. But a sum or average or count could have been appropriate in other cases.</li>
+          <li>You decide whether you want to group other values in the process.</li>
+        </ul>
+        So let's take a look:
+      </p>
+      <program language="python">
+        data2 = con.sql("""
+                PIVOT data
+                ON INDICATOR_ID
+                USING first(OBS_VALUE)
+                ORDER BY TIME_PERIOD, REF_AREA_ID""")
+        print(data2)
+      </program>
+      <p>
+        Note how each indicator has now been placed in its own column.
+      </p>
+      <exercise>
+        <p>Restrict this data further so that we only see the country, year and total male population (WB_WDI_SP_POP_TOTL_MA_IN), and then pivot on the year column using the population values. The result should be two rows, one for DEU and one for USA, with one column for each year.</p>
+        <p>Then do a variation of this where you have one column for each country, and the years are instead different rows. This would have a total of 3 columns.</p>
+      </exercise>
+    </paragraphs>
+</subsection>

@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-sql-collectingdata-from-api">
+  <title>Practical example: Collecting data from an API</title>
+  <introduction>
+    <p>
+      In this section we will bring together some of the work we have done so far, to collect information about the world, using the <url href="https://data360.worldbank.org/en/api">Data360 API</url> provided by the World Bank. This API contains a multitude of information about the world countries, and it is in a reasonably nice form.
+    </p>
+    <p>
+      In this section we will use <c>httpx</c> and <c>duckdb</c> to access a lot of the information there, and store it in our own database for further use.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-example-getting-world-development-indicators">
+    <title>Example: Getting the World Development Indicators information</title>
+    <p>
+      In this section we will write a program to read in data from the world bank about the so-called "world development indicators" (WDIs), then store it for future use. This will bring together some of our earlier work, with httpx to get stuff from an API, as well as json to write the data to a file. We'll work on putting together a <c>read-indicators.py</c> file that when run creates an <c>indicators.json</c> file with information about the indicators, for our future use.
+    </p>
+    <p>
+      Our main source is the <url href="https://data360.worldbank.org/en/api">Data360 API</url>. It has a lot of information available to it and would take some time to learn it all, but we will start with a request to find out about the different indicators. Note a bit down the page one of the endpoints called indicators. we will call on that endpoint to get a list of the indicator IDs. Looking at the endpoint we come up with the following:
+    </p>
+    <program language="python">
+      baseUrl = "https://data360api.worldbank.org/data360"
+      indicatorsEndpoint = f"{baseUrl}/indicators?datasetId=WB_WDI"
+      indicators: list[str] = httpx.get(indicatorsEndpoint).json()
+    </program>
+    <p>
+      Next we would like to learn information about each indicator. There is a <c>metadata</c> endpoint we can use for that. If you look at its details, it requires that we provide a query json with what we want, and it has some weird syntax that we will just use. But it is different, in that it requires us to make a POST request, and to also provide in the body of that request a query json object. We can easily do this with httpx:
+    </p>
+    <program language="python">
+      metadataEndpoint = f"{baseUrl}/metadata"
+
+      def getIndicatorMetadata(indicator: str):
+          res = httpx.post(metadataEndpoint,
+              json= { "query": f"&amp;$filter=series_description/idno eq '{indicator}'" } )
+          return res.json()
+    </program>
+    <p>
+      In order to check this works we will first use it on one indicator and write the result to a JSON file:
+    </p>
+    <program language="python">
+      jsonData = getIndicatorMetadata(indicators[0])
+      with open("sampleIndicator.json", "w") as f:
+          json.dump(jsonData, f, indent=2)
+    </program>
+    <p>
+      This is a one-time throw-away code that we use just to get the data in a file. But for now let's look at this file we created to see how data is stored. Note that the top-level object has three keys and the only relevant key for us is <c>"value"</c>. In it we see a list with one entry, and in that entry a key called <c>"series_description"</c> that has pretty much all the useful info. We will assume this basic structures works for all indicators. There is a whole lot there, but we'll focus on pulling a few keys. We can use a <em>dictionary comprehension</em> for that if we have a list of the keys we want:
+    </p>
+    <program language="python">
+      indicator_metadata_keys = [
+          "idno", "name", "measurement_unit", "definition_long",
+          "methodology", "csv_link", "json_link", "api_link"
+      ]
+      def getSimpleIndicatorData(data):
+          series_description = data["value"][0]["series_description"]
+          return { key: series_description[key]
+                  for key in indicator_metadata_keys }
+
+      jsonData = getSimpleIndicatorData(getIndicatorMetadata(indicators[0]))
+      with open("sampleIndicator.json", "w") as f:
+          json.dump(jsonData, f, indent=2)
+    </program>
+    <p>
+      Now the sample indicator entry should be much shorter. Since we saw this work, we will now apply it to the whole list, so we'll replace the file write at the end with:
+    </p>
+    <program language="python">
+      jsonData = [
+          getSimpleIndicatorData(getIndicatorMetadata(indicator))
+          for indicator in indicators
+      ]
+      with open("indicators.json", "w") as f:
+          json.dump(jsonData, f, indent=2)
+    </program>
+    <p>
+      This function may take a while to run, as it has to process each indicator. We should perhaps have introduced a print report to receive information after each completed download. But after a few minutes you will end up with a file with about 15000 lines. There are basically 1500 indicators, each taking 10 lines in the resulting file.
+    </p>
+    <p>
+      Before moving on to the next step, let's also convert this json file into a CSV form. You'll see this JSON has a very particular form that is basically ready to go into a CSV file: We have a list of items, and each entry is a dictionary that could be come a row in CSV, with the keys acting as the column names. And lucky for us, duckdb already knows how to read such a thing, and also has an easy way to write CSV (put this on a new file):
+    </p>
+    <program language="python">
+      # file: indicators-to-csv.py
+      import duckdb
+
+      indicators = duckdb.read_json("indicators.json")
+      duckdb.sql("COPY indicators TO 'indicators.csv' (HEADER, DELIMITER ',')")
+    </program>
+    <p>
+      Note <c>read_json</c>, it returns a table that it can make from the provided json file. It is pretty much by itself, but if need be there are ways to guide it more. The second line then uses the duckdb SQL command <c>COPY ... TO ...</c> which tells duckdb to write the table in the <c>indicators</c> variable to the <c>indicators.csv</c> file, including a header and using comma as the delimiter. After you run this short script you should see the new CSV file. It doesn't look very pretty, with what appear to be empty lines, but a proper spreadsheet program should be able to open it.
+    </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-example-getting-data-for-indicator">
+    <title>Example: Getting the data for an indicator</title>
+    <p>
+      Now that we have a JSON file with information about these indicators, we should choose a few to focus on, because loading 1500 will take a while. You can always look through and pick some more if you would like.
+    </p>
+    <program language="python">
+      indicators = [
+        "WB_WDI_AG_LND_EL5M_RU_K2",    # rural land area below 5m abovesea level
+        "WB_WDI_AG_LND_TOTL_RU_K2",    # rural land area
+        "WB_WDI_BN_GSR_FCTY_CD",       # net primary income
+        "WB_WDI_CC_PER_RNK",           # control of corruption
+        "WB_WDI_EG_CFT_ACCS_UR_ZS",    # access to clean fuels (% of pop)
+        "WB_WDI_EN_POP_SLUM_UR_ZS",    # pop living in slums
+        "WB_WDI_FI_RES_TOTL_CD",       # total reserves
+        "WB_WDI_FR_INR_LEND",          # lending interest rate
+        "WB_WDI_HD_HCI_OVRL",          # human capital index
+        "WB_WDI_IT_NET_USER_ZS",       # individuals using the internet
+        "WB_WDI_NY_GDP_PCAP_CD",       # GDP per capita
+        "WB_WDI_SE_ADT_1524_LT_FM_ZS", # literacy rate, youth
+        "WB_WDI_SE_ADT_LITR_ZS",       # literacy rate, adults
+        "WB_WDI_SH_DTH_IMRT",          # number of infant deaths
+        "WB_WDI_SP_POP_1564_FE_IN",    # population ages 15-64, female
+        "WB_WDI_SP_POP_TOTL_MA_IN",    # population, male
+        "WB_WDI_SP_POP_TOTL_MA_ZS",    # pop, male, %
+      ]
+    </program>
+    <p>
+      Let's take a look at the data we want to grab. Let's take the first indicator for example. Looking at our indicators file we find three kinds of links: a csv link, a json link, and an api link. We see that the json link is about the metadata, so we'll use one of the other two, and let's do the csv link. We're going to start a new file, <c>read-data.py</c>:
+    </p>
+    <program language="python">
+      csvLink = "https://data360files.worldbank.org/data360-data/data/WB_WDI/WB_WDI_AG_LND_EL5M_RU_K2.csv"
+      data = httpx.get(csvLink).text
+      with open("sampleData.csv", "w") as f:
+          f.write(data)
+    </program>
+    <p>
+      Now we can look at that file. It's a CSV file, you can open it up in Excel or other spreadsheet document for easier viewing. Or we can load it with duckdb, then view its schema, but also save it as json.
+    </p>
+    <program language="python">
+      data = duckdb.read_csv("sampleData.csv")    # load as a table
+      duckdb.sql("COPY data TO 'sampleData.json' (ARRAY)")
+      schema = duckdb.sql("DESCRIBE TABLE data")   # The table's schema
+      for row in schema.fetchall():
+          print(row)
+    </program>
+    <p>
+      The second line writes the data out to the json file. Simply using that extension tells duckdb all it needs to write the data out as json. The <c>(ARRAY)</c> part tells it to form an array at the top level. The next line is the analog of <c>.schema ...</c> in sqlite3, and it will print out the column definitions for the dataset.
+    </p>
+    <p>
+      Looking at that json document, we can see the keys we want to keep from an indicator:
+      <ul>
+        <li><c>REF_AREA_ID</c> is a 3-letter abbreviation of the area we are considering.</li>
+        <li><c>REF_AREA_NAME</c> is the long-form name of the area we are considering.</li>
+        <li><c>INDICATOR_ID</c> and <c>INDICATOR_NAME</c> are the indicator id and name respectively.</li>
+        <li>We could store the unit measure, but to keep things simple we'll skip it.</li>
+        <li><c>TIME_PERIOD</c> is the year under consideration.</li>
+        <li><c>OBS_VALUE</c> is the actual value for the indicator.</li>
+      </ul>
+      These are the columns we want to preserve. So let's try the following:
+    </p>
+    <program language="python">
+      data = duckdb.sql("""
+          SELECT REF_AREA_ID, REF_AREA_NAME,
+              INDICATOR_ID, INDICATOR_NAME,
+              TIME_PERIOD, OBS_VALUE
+          FROM read_csv('sampleData.csv')""")
+      duckdb.sql("COPY data TO 'sampleData.json' (ARRAY)")
+    </program>
+    <p>
+      If you look at the sample.json file now, you'll see only the entries we want. Before we move on here's one awesome fact: duckdb doesn't just work with local csv files. It can directly download from a remote file. So we can do:
+    </p>
+    <program language="python">
+      csvLink = "https://data360files.worldbank.org/data360-data/data/WB_WDI/WB_WDI_AG_LND_EL5M_RU_K2.csv"
+      data = duckdb.sql("""
+          SELECT REF_AREA_ID, REF_AREA_NAME,
+              INDICATOR_ID, INDICATOR_NAME,
+              TIME_PERIOD, OBS_VALUE
+          FROM read_csv('""" + csvLink + "')")
+      duckdb.sql("COPY data TO 'sampleData.json' (ARRAY)")
+    </program>
+    <p>
+      Now that we know how to download and decode one particular file, we would like to do this for all indicators. Generally the steps we want to follow would be:
+      <ul>
+        <li>We have a list of indicator ids. We want to use the indicators json file to obtain a list of CSV links.</li>
+        <li>We want to use duckdb to load each of the CSV links, then fetch all the values from them.</li>
+        <li>At this point we will have a list of lists of entries, and we flatten it to a single list.</li>
+        <li>Lastly, we want to write the whole thing into a CSV file, a JSON file as well as a duckdb database.</li>
+      </ul>
+      So let's carry out these steps. We start by reading the indicators file.
+    </p>
+    <program language="python">
+      with open("indicators.json", "r") as f:
+          indicatorData = json.load(f)
+
+      csvLinks = [
+          indicator["csv_link"]
+          for indicator in indicatorData
+          if indicator["idno"] in indicators
+      ]
+      print(csvLinks)
+    </program>
+    <p>
+      Here is a way to do it using duckdb to load the data:
+    </p>
+    <program language="python">
+      indicatorData = duckdb.sql("""SELECT idno, csv_link
+          FROM read_json('indicators.json')
+          """).fetchall()
+      csvLinks = [
+          csv_link
+          for idno, csv_link in indicatorData
+          if idno in indicators
+      ]
+    </program>
+    <p>
+      Now that we have a list of links, we can read each of them via duckdb:
+    </p>
+    <program language="python">
+      def readCsvLink(csvLink):
+          return duckdb.sql("""
+              SELECT REF_AREA_ID, REF_AREA_NAME,
+                  INDICATOR_ID, INDICATOR_NAME,
+                  TIME_PERIOD, OBS_VALUE
+              FROM read_csv('""" + csvLink + "')")
+
+      relations = [
+          readCsvLink(csvLink)
+          for csvLink in csvLinks
+      ]
+      print(relations)
+
+    </program>
+    <p>
+      This will take a few seconds to run as it has to access and download each link. But you should see a bunch of summary results printed out. Now we have a list of "relations", which is duckdb's name for the results of its queries. We want to combine them, essentially putting their data below each other. Basically we want to perform UNION in SQL terms. We can use duckdb's UNION structure for this. We will also use a function called <c>reduce</c>:
+    </p>
+    <program language="python">
+      def union(a, b):
+          return duckdb.sql("SELECT * FROM a UNION SELECT * FROM b")
+
+      from functools import reduce
+      total = reduce(union, relations)
+    </program>
+    <p>
+      So let's explain what happens there. The <c>union</c> function takes two relations and uses duckdb to combine them into a new relation and returns it. The new mystery is the <c>reduce</c> function. It takes two parameters: A function and a list. Then it basically does exactly what we would do to computer something like <c>((a + b) + c) + d</c>. What we would do in that case is add the first two, then to the result add the third, then to the result of that add the fourth and so on. In our case the function will do exactly this process but using <c>union</c> instead of normal addition. So the result will be the union of all the relations, done two at a time.
+    </p>
+    <p>
+      We just need to save the result now:
+    </p>
+    <program language="python">
+      duckdb.sql("COPY total TO 'worldbankdata.csv' (HEADER, DELIMITER ',')")
+      duckdb.sql("COPY total TO 'worldbankdata.json' (ARRAY)")
+
+      con = duckdb.connect("worldbankdata.duckdb")
+      con.sql("CREATE TABLE worldbankdata AS SELECT * FROM read_csv('worldbankdata.csv')")
+      con.close()
+    </program>
+    <p>
+      You can see the sizes of the three files on the database. The CSV file is about 12MB, the JSON is 24MB, and the database is only 2MB. At this point we have finished reading in and storing the data.
+    </p>
+    <paragraphs>
+      <title>Alternative approach to loading and combining the data</title>
+      <p>
+        We could have taken a different approach to putting together the data: Start with loading the first table in, then use INSERT to add the other tables. Here is how that might look like, starting after creating the <c>relations</c>:
+      </p>
+      <program language="python">
+        created = False
+        for r in relations:
+            if not created:
+                duckdb.sql("CREATE TABLE total AS SELECT * FROM r")
+                created = True
+            else:
+                duckdb.sql("INSERT INTO total SELECT * FROM r")
+      </program>
+    </paragraphs>
+    <p>
+      One key difference in the two approaches: In the second approach we actually create a table. On the first approach we only used queries and stored things in Python variables.
+    </p>
+  </subsubsection>
+</subsection>

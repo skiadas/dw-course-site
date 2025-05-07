@@ -6,10 +6,8 @@
     <p>
       <ul>
         <li>SQL from Python</li>
-        <li>duckdb</li>
       </ul>
     </p>
   </introduction>
   <xi:include href="sub-w2-d2-sql-from-python.ptx" />
-  <xi:include href="sub-w2-d2-duckdb.ptx" />
 </section>

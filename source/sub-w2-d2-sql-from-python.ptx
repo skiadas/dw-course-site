@@ -134,4 +134,94 @@
         </p>
       </exercise>
     </exercises>
+      <subsubsection xml:id="subsubsec-exporting-from-sqlite3">
+    <title>Exporting from SQLite 3</title>
+    <p>
+      Before we start on duckdb, let's get some data we can work with. We will export the data we created in SQLite 3. There are fundamentally two ways to do this:
+      <ul>
+        <li>We can export a file with extension <c>.sql</c> often called a <term>SQL dump</term>. This is a file that contains a suitable sequent of CREATE TABLE and INSERT commands to recreate the entire database.</li>
+        <li>We can export individual tables as CSV files. And CSV files can be readily consumed by many applications, including DuckDb.</li>
+      </ul>
+    </p>
+    <paragraphs>
+      <title>Dumping from SQLite</title>
+    <p>
+      To produce a SQL dump from SQLite3 you can use the following command from the terminal:
+    </p>
+    <program language="$">
+      sqlite3 chinook.sqlite .dump &gt; chinook-dump.sql
+    </program>
+    <p>
+      Here the <c>.dump</c> command tells the system to produce this dump, and by default it would just print the result to the terminal. Using <c>&gt; chinook-dump.sql</c> instead redirects the output to a file. You can open the file and peruse its contents.
+    </p>
+    <p>
+      Unfortunately this produces SQL code that is not compatible with other systems, for a number of reasons:
+      <ul>
+        <li>First of all it surrounds the identifiers in square brackets, something that is highly non-standard. And telling it to not do this is actually extremely hard. So what you would want to do instead is search for <c>[</c> and <c>]</c> in the resulting SQL file and delete them (replace with nothing).</li>
+        <li>It uses the <c>PRAGMA foreign_keys=OFF;</c> command which is not a general option in other databases. so we could simply delete that line.</li>
+        <li>It creates tables in the wrong order. So it tries to create the Album table first, but that table has a foreign key constraint on the Artist table. We can solve this in one of two ways: Either move all the create table commands to be in the correct order, or make the tables first without the foreign key constraints, and then alter them to add the foreign key constraints, using ALTER TABLE. We would need to take the second approach, because the various INSERT commands are all done in the wrong order, so an album gets inserted before the corresponding artist exists, and that is a foreign key violation. So the idea is that we want to first create the tables without any foreign key constraints, then add the values in, and only then alter the tables to have foreign key constraints. Unfortunately DuckDb does not allow an ADD CONSTRAINT during ALTER TABLE, at this point in time, so this is not workable.</li>
+      </ul>
+      So this is a very real example of the difficulty when working with incompatible systems and data formats, a challenge you should get used to. But there is a way forward, read on.
+    </p>
+    <p>
+      The proper solution for the conversion is specific to your use case, but for us the following works. First create a file called <c>sqlite-create-dump.sql</c> where we specify the order in which we want to dump the tables:
+    </p>
+    <pre>
+      .dump Employee
+      .dump Customer
+      .dump Invoice
+      .dump Artist
+      .dump Genre
+      .dump MediaType
+      .dump Album
+      .dump Track
+      .dump InvoiceLine
+      .dump Playlist
+      .dump PlaylistTrack
+    </pre>
+    <p>
+      This order is designed so that the corresponding tables don't require anything that isn't already created beforehand. Then we need to:
+      <ul>
+        <li>tell SQLite 3 to run this file on the database and show us the results,</li>
+        <li>tell a command line tool to replace all square brackets with empty space,</li>
+        <li>tell another command line tool to ignore all PRAGMA lines,</li>
+        <li>write the result in a new file</li>
+      </ul>
+      Here is a program that achieves this. It uses a tool called <c>sed</c> that lets you search for patterns and replace them (with nothing in this case). Then it uses another tool called <c>grep</c> that lets you selectively choose which lines to include or not. Finally, it uses <c>&gt;</c> to write the result to a file.
+    </p>
+    <program language="shell">
+      sqlite3 chinook.sqlite &lt; sqlite-create-dump.sql |  \
+         sed -E 's/\[|\]//g' |  \
+        grep -v '^PRAGMA' &gt; chinook-dump.sql
+    </program>
+    <p>
+      If this looks insane and you'd like a python-based version, you could do something like this, after the basic <c>sqlite3 chinook.sqlite &lt; sqlite-create-dump.sql</c> command:
+    </p>
+    <program language="python">
+      with open("chinook-dump.sql", "r") as f1:
+        with open("chinook-dump-fixed.sql", "w") as f2:
+            for line in f1.readlines():
+                if not line.startswith("PRAGMA"):
+                    fixedText = line.replace("[", "").replace("]", "")
+                    f2.write(fixedText)
+    </program>
+    <p>
+      This is now a sql file that we can read from other database like <c>duckdb</c>.
+    </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Exporting CSV files from SQLite</title>
+      <p>
+        Before moving on, let's also see how we can export individual tables to CSV files. Luckily this is a bit easier to do. The main steps are:
+        <ul>
+          <li>First of all we enter the sqlite3 interactive tool for that (we could use a script file too if we wanted)</li>
+          <li>If you want headers included, set the headers setting on by running <c>.headers on</c></li>
+          <li>Set the mode to CSV by doing <c>.mode csv</c>. At this point you can test with something like <c>SELECT * from Album;</c> and see that the results are showing in a comma-separated form.</li>
+          <li>Instruct SQLite3 to write the result of the next command to a file with <c>.once "albums.csv"</c>, then run the query.</li>
+          <li>Run the query and you should now see file having the correct contents.</li>
+          <li>Repeat the <c>.open + SELECT</c> steps for as many tables as you would like to create. We will keep it to this one table for now as we just want to use it as an example of how DuckDb loads CSV data.</li>
+        </ul>
+      </p>
+    </paragraphs>
+  </subsubsection>
 </subsection>

@@ -4,8 +4,9 @@
   <title>Week 2</title>
   <xi:include href="sec-w2-d1.ptx" />
   <xi:include href="sec-w2-d2.ptx" />
-  <section xml:id="sec-week-2-day-3">
-    <title>Wednesday</title>
+  <xi:include href="sec-w2-d3.ptx" />
+  <section xml:id="sec-week-2-day-4">
+    <title>Thursday</title>
     <p>
       <ul>
         <li>Distributed databases: replication, sharding, read/write consistency</li>
@@ -21,9 +22,6 @@
         <li>Activity: ORM</li>
       </ul>
     </p>
-  </section>
-  <section xml:id="sec-week-2-day-4">
-    <title>Thursday</title>
     <p>
       <ul>
         <li>Pandas, Numpy</li>

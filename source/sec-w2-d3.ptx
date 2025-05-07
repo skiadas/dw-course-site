@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-2-day-3" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Tuesday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>DuckDb</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w2-d3-duckdb.ptx" />
+  <xi:include href="sub-w2-d3-collectingdata-from-api.ptx" />
+  <xi:include href="sub-w2-d3-analysing-data-in-duckdb.ptx" />
+</section>
