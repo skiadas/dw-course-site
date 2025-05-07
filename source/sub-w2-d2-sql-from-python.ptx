@@ -64,7 +64,7 @@
     <p>
       This program, when run, would perform the insertion of one entry, then immediately execute the DROP TABLE command which deletes the whole table. This is extremely dangerous, and a major security flaw! And it is commemorated in the classic xkcd comic strip:
     </p>
-    <image source="https://xkcd.com/327/">
+    <image source="https://imgs.xkcd.com/comics/exploits_of_a_mom.png">
       <shortdescription>XKCD exploits of a mom. Comic about the dangers of SQL injection.</shortdescription>
     </image>
     <p>
