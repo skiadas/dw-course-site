@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-sql-distributed-databases-and-cap">
+  <title>Distributed Databases and the CAP theorem</title>
+  <introduction>
+    <p>We discuss here the various possibilities when it comes to expanding our database capabilities by using multiple database servers and the problems that arise. As we get more and more users of our application, which may be geographically separated, a fundamental question becomes how to keep up with the workload. There are fundamentally two approaches: sharding and replication.</p>
+    <p>We then discuss problems that arise from the invariable consequence of the distributed nature of the databases, namely that of conflicting operations. This will be effectively summarized in the CAP theorem.</p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-replication-vs-sharding">
+  <title>Replication vs Sharding</title>
+  <p>First of all there are two <em>orthogonal</em> approaches to server expansion. We can have both in place, or just one, or neither.</p>
+  <paragraphs>
+    <title>Sharding</title>
+    <p>Sharded database servers each contain a part of the overall data, i.e. they store different data on separate nodes. This division could be either via storing different tables, or more likely storing different rows for each table. For example in our evaluations database we may have a different shard for each academic department or each year. Some key characteristics of sharding:
+      <ul>
+        <li>Sharding works great when the different queries performed each only need to talk to one shard.</li>
+        <li>Sharding loses value when we need to make queries that will span multiple shards.</li>
+        <li>We need the incoming requests to be somewhat balanced. If we have 5 shards, but at any given time all the requests are coming in for only one shard and the other 4 sit idly by, we are not gaining anything.</li>
+      </ul>
+    </p>
+    <p>A great example of sharding is how online game works. They typically divide their player base in "regions", often just called "servers". So all data for a particular region is handled by a single database shard. No queries to such a shard will need to go out to other shards. At some point that server hits a "limit" and new players are not allowed in it, but a new server may open up. Or if population diminishes in some servers the developers may join some servers together into a single shard.</p>
+    <exercise>
+      <p>Consider the following as possible sharding choices for our student evaluations, and evaluate them with the above restrictions in mind.
+        <ul>
+          <li>Each department goes on a separate shard</li>
+          <li>Each year goes on a separate shard</li>
+          <li>Shards are based on user last names (A-K, L-S etc)</li>
+          <li>Shards are based on a randomly generated user id</li>
+        </ul>
+      </p>
+    </exercise>
+  </paragraphs>
+  <paragraphs>
+    <title>Replication</title>
+    <p>Replicated servers contain identical copies of the entire database, and are often called <em>mirrors</em>. This doesn't help you break a big database down into manageable chunks, but it may allow more people to be accessing it. Having multiple identical copies means that multiple queries can be served at the same time, but it also means that some amount of <em>synchronization</em> needs to be in place to keep the different replicas in sync.</p>
+    <p>Replication improves <em>resilience</em>, as the data is now stored on multiple nodes. If a node dies we don't lose any data.</p>
+    <exercise>
+      <p>We want to be able to handle 1000 accesses per second. Each server takes 25 milliseconds per response, and it costs 2$ per hour to run. What budget will we need?</p>
+    </exercise>
+    </paragraphs>
+</subsubsection>
+<subsubsection xml:id="subsubsec-types of replication">
+  <title>Types of Replication</title>
+  <p>
+    Replication comes in two fundamentally different forms: master-slave replication, and peer-to-peer replication. In general the fundamental question is regarding reads and writes:
+    <ul>
+      <li><term>reads</term> are basically SELECT queries, that simply return values but don't change the data in any way.</li>
+      <li><term>writes</term> are all the other kinds of queries, that permanently modify the data in some way.</li>
+    </ul>
+  </p>
+  <paragraphs>
+    <title>Master-slave replication</title>
+  <p>In the unfortunately named master-slave replication setup we have one server, considered the <term>master</term>. There are also multiple <term>slave</term> servers, that receive updates from the master.
+    <ul>
+      <li>All writes happen on the master.</li>
+      <li>Reads can happen from any server</li>
+    </ul>
+    So this system distributes reads well across multiple nodes. It is however still constrained by having writes happen in only one place.</p>
+    <p>This design offers <term>read resilience</term>: Even if one or more of the servers fails, the remaining servers can keep offering read access. This can help a lot with read-heavy applications, but will offer little benefit to write-intensive applications.</p>
+    <p>As the slaves are exact replicas of the master server, one of them can assume the role of the master in case the master fails. In fact most of the time you can simply create a set of nodes and have them automatically decide who would be the master.</p>
+    <p>There are some consistency issues that occur due to the delay in updating between master and slaves. We will discuss those later.</p>
+  </paragraphs>
+  <paragraphs>
+    <title>Peer-to-peer Replication</title>
+    <p>Peer-to-peer replication aims to address the fact that the master can be a severe bottleneck on master-slave replication setups. In a peer-to-peer replication setup the various nodes are all <q>equals</q>, often called <em>replicas</em>. Any node can accept reads as well as writes, and they communicate these writes to each other.</p>
+    <p>The biggest advantage of this setup of course is its read and write resilience. One node's failure does not cause problems, as the remaining nodes can continue their work without losing a beat.</p>
+    <p>The biggest problem that arises is that of consistency. For example we may have conflicting write requests that come to different nodes, and then those nodes attempt to communicate those requests to the rest of the nodes. This could lead to considerable inconsistencies.</p>
+    <p>There are various ways to resolve this, that we will discuss in more details later. The most standard approach would be to have the replicas communicate their writes first before they <q>accept</q> them. Once a majority of the replicas has confirmed a write, it can now be considered as having been successfully performed and a response sent to the client. This requires a certain amount of network traffic in coordinating these writes, so a write may take longer to be performed.</p>
+    <p>This is a common tradeoff between consistency and availability, and we will return to it later.</p>
+  </paragraphs>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-types-of-read-write-conflicts">
+    <title>Types of Read/Write Conflicts</title>
+    <p>When working with a distributed/replication system, there is the possibility of inconsistent behaviors, where two users attempt to use the system and the order in which events occur may result in errors. These situations are generally called <term>conflicts</term> and fall under two types:</p>
+<paragraphs>
+  <title>Write-Write Conflicts</title>
+  <p>Consistency is of primary importance on all database systems. It aims at handling conflicts in a meaningful way. The most typical example of such conflicts are the so-called write-write conflicts:</p>
+  <p>A <term>write-write conflict</term> occurs when two clients, A and B, both attempt to update the same resource, with different values. These two attempts must be serialized, let's say by client A going first, with the result that A's change will get overwritten by B's change.</p>
+  <p>In effect what happens is that attempt B was based on the values present before attempt A, and yet happens after it. This is an inconsistency. As a simple example, imagine two clients trying to deposit money to the same account by changing the account's balance. Here is the series of events:
+    <ol>
+      <li><c>A</c> checks the account balance and finds it to be $200.</li>
+      <li><c>B</c> checks the account balance and also finds it to be $200.</li>
+      <li><c>A</c> decides to deposit $150 to the account so sets the balance to be $150 more than the balance it saw before, namely $200+$150 = $350.</li>
+      <li><c>B</c> decides to deposit $200 to the account, so sets the balance to be $200 more than the balance it saw before, namely $200 + $200 = $400.</li>
+      <li>The account ends up at only $400 instead of the $550 that it should have been if both deposits had occurred.</li>
+    </ol>
+  </p>
+  <exercise>
+    <p>Think about some strategy that might allow those clients to successfully manage to increase the balance by the amount they want to add, even if others attempt to add at the same time. Expect that someone might change the balance since you last read it, you cannot count on it not having changed.</p>
+  </exercise>
+  <p>There are two main approaches to dealing with consistency problems:
+    <ul>
+      <li>
+        <p><term>Pessimistic</term>: The pessimistic approach tries to prevent conflicts at all costs. In the case of write-write conflicts it would do so by establishing a <em>write lock</em> when the first request comes in. This way client B cannot attempt to do anything until client A has finished with their write and released the lock. Effectively imagine you having to go into a room to do the work, and there is only one key to the door. Only one of you can have the key and go in at any given time.</p>
+        <p>Pessimistic approaches tend to sacrifice availability/liveness for consistency/safety, as working with the locks takes time and slows down the client's response. You may have to tell the second client to wait while the first client is writing their answer.</p>
+      </li>
+      <li>
+        <p><term>Optimistic</term>: The optimistic approach allows conflicts to occur, but detects them and takes some later action to sort them out. A common approach for that is a <em>conditional update</em>, where each client tests the value before attempting to update, and fails if the value has changed. In the basic example above, this would cause the B client's update to fail.</p>
+        <p>Another optimistic approach is to let both writes <q>occur</q>, but record that they are in conflict, and have in place some rules for resolving such conflicts. This requires specific domain knowledge.</p>
+        <p>Optimistic approaches sacrifice consistency/safety for availability/liveness.</p>
+      </li>
+    </ul>
+  </p>
+  <p>In cases with replication further complications might ensue, regarding the order of serialization: If two nodes both receive the requests from clients A and B, but perform them in opposite orders, then we end up with one node where A's request went through and another node where B's request went through, and these nodes must now reconcile themselves.</p>
+</paragraphs>
+<paragraphs>
+  <title>Read-Write Conflicts</title>
+  <p>Read-Write conflicts come in two flavors. The first is a conflict that violates what we would call logical consistency:</p>
+  <p>A <term>logical inconsistency</term> occurs when client A needs to update two resources, X, and Y, that are related. The client updates resource X, but before he gets a chance to update Y another client B reads both X and Y. Now client B is reading an inconsistent state between the two resources.</p>
+  <p>This situation is usually handled via <term>transactions</term>: Both updates to X and Y are treated as one transaction, and they are both performed before the other client has a chance to do anything.</p>
+  <p>In NoSQL systems this is still possible as long as these changes are part of the <em>same</em> aggregate. You can change multiple parts of the same aggregate in one atomic transaction. But changing multiple aggregates will typically require multiple transactions, resulting in an <em>inconsistency window</em> during which another client might read inconsistent data.</p>
+  <p>The other kind of conflict is related to replication consistency:</p>
+  <p>A <term>replication consistency</term> occurs when client A updates a resource X in one node, and that update propagates through the replicas, but it arrives at the different replicas at different times. Clients accessing the different replicas might see different values for X, even if they access it at the same time, because the update might have arrived at the one replica but not the other.</p>
+  <p>This is a situation where the system would be <term>eventually consistent</term>, as the replicas will eventually all receive the update. But there is a time window during which the data on some replicas is effectively <em>stale</em>. This may be fine. If you post a new instagram photo, it's OK if some of your contacts see it immediately while others only see it 5 minutes later. There are situations where eventual consistency is perfectly sufficient.</p>
+  <p>Some times we would be content with a weaker sort of consistency, namely <term>session consistency</term>. If we make some changes, we expect that we should be immediately able to see those changes, even if it may take longer for these changes to propagate to everyone else. This is also called <term>read-your-writes</term> consistency. This is often achieved via <term>sticky sessions</term>, i.e. all operations related to a particular user session being processed by the same node. This is also called <term>session affinity</term>.</p>
+</paragraphs>
+  <exercise>
+    <p>Provide examples of various kinds of conflicts and inconsistencies during drop/add registration, and discuss their severity/consequences.</p>
+  </exercise>
+  </subsubsection>
+
+<subsubsection xml:id="subsubsec-cap-theorem">
+  <title>Relaxing Consistency: The CAP Theorem</title>
+  <p>The CAP theorem relates 3 notions:
+    <ul>
+      <li><term>Consistency</term>: The responses we receive are consistent with the state of the system.</li>
+      <li><term>Availability</term>: every request received by a non-failing node must result in a response.</li>
+      <li><term>Partition Tolerance</term>: the cluster can survive communications breakages that partition the cluster into sets of servers that can talk to each other but to no servers from other sets. For instance a break in satellite communications could leave a worldwide network into groups of servers on each continent. Each server can connect to any other server on the same continent, but can no longer connect to servers on other continents. Essentially every distributed system must provide some amount of partition tolerance.</li>
+    </ul>
+  </p>
+  <p>In it's simplified form, the CAP theorem says the following:</p>
+  <blockquote>
+    <p><term>CAP Theorem</term></p>
+    <p>Given the three properties of Consistency, Availability, and Partition Tolerance, you can only achieve two of the three.</p>
+    <p>More precisely, on a system that may suffer partitions, as all distributed systems may do, you have to trade off consistency vs availability. It does not have to be one or the other: You often sacrifice some consistency to obtain more availability.</p>
+  </blockquote>
+  <p>Let us consider a simple example, of two nodes, A and B, linked together. And suppose we attempt to make a write on node A. Then in order to provide consistency, that node must communicate with node B first and confirm that the write is safe before accepting it. But this means that if the link between A and B is broken, then node A cannot possibly allow the write to happen. And this breaks availability.</p>
+  <p>If the two nodes follow a <q>master-slave</q> paradigm, where B is the master and A is the slave, then B can always be available for reads and writes. But in order for A to successfully write it must first send the request to B, which would be impossible if the link between them had broken. In that case also B may show inconsistent results.</p>
+  <p>On the other end of the spectrum we could have node A accept any writes without consulting with node B. This provides availability. But it can break consistency when conflicting updates occur simultaneously to both nodes.</p>
+  <p>This may still be OK if the system has some way to handle inconsistent updates. Depending on the problem at hand, this may still be OK. For instance, overbooking a flight by a few passengers may be manageable, or having multiple items enter the same shopping cart in Amazon may be resolvable when the user tries to check out. <em>Certain inconsistent writes may be manageable based on your system's logic. You do not always have to sacrifice availability in order to achieve (occasionally unneeded) consistency.</em> </p>
+
+  <paragraphs>
+    <title>Quorums</title>
+<p>Given the possibility of node failures in a replication scenario, one important consideration is how to ensure consistency. For instance if a node is processing a write, but the node fails before it can communicate that write to the other nodes, then that write may not happen. Or when the node manages to connect back to the system, that node's changes might now conflict with changes elsewhere in the system.</p>
+<p>A way to minimize this problem is to use a <term>write quorum</term>, where we only consider the write operation performed when over half the nodes have processed it. This way if we have multiple conflicting changes, only one may reach a quorum.</p>
+<p>There is a similar question with achieving <term>read quorum</term>. How many nodes do we need to contact in order to read something and be sure that we are reading its accurate value? The simple idea is that we need to make sure that we read from enough nodes so that if there was a write going on, we would talk to some of the nodes involved in that write. In order to make that more precise, let's set some more precise terminology:</p>
+<p><ul><li>$N$: The <term>replication factor</term> N is the number of replicas we have. Our system may be broken into many shards and replicas, we only consider here how many copies of a piece of data we have.</li>
+  <li>$W$: The <term>write quorum</term> number is the number of replicas that must accept a write before we consider it done. The bigger $W$ is, the slower writes are.</li>
+  <li>$R$: The <term>read quorum</term> number is the number of replicas we must read a value from before we consider it guaranteed to be the correct value. The bigger $R$ is, the slower reads are.</li>
+</ul>
+</p>
+<p>Based on this we have some key conditions:
+  <ul>
+    <li>In order to avoid write-write conflicts and ensure strong write consistency, we must have $W > N/2$.
+    </li>
+    <li>In order to avoid read-write conflicts and ensure strong read consistency, we must have $W + R > N$.</li>
+  </ul>
+</p>
+<p>As an example, let us suppose that $N=3$, a popular choice. Then we have a number of options for $W$ and $R$:
+  <ul>
+    <li>$W=2$ and $R=2$. This leads to balanced speeds for reads and writes. Ensures strong consistency.</li>
+    <li>$W=3$ and $R=1$. This leads to faster reads at the cost of slower writes. Ensures strong consistency. You also cannot tolerate a failing node for writes.</li>
+    <li>$W=2$ and $R=1$. This ensures write-consistency, fast reads, and somewhat fast writes, but allows for the possibility of stale reads, if the node we read from happens to be different from the two nodes we write to.</li>
+  </ul>
+</p>
+  </paragraphs>
+</subsubsection>
+</subsection>

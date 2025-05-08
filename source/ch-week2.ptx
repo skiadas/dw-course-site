@@ -5,23 +5,9 @@
   <xi:include href="sec-w2-d1.ptx" />
   <xi:include href="sec-w2-d2.ptx" />
   <xi:include href="sec-w2-d3.ptx" />
-  <section xml:id="sec-week-2-day-4">
-    <title>Thursday</title>
-    <p>
-      <ul>
-        <li>Distributed databases: replication, sharding, read/write consistency</li>
-        <li>Activity: live people demonstration</li>
-        <li>CAP theorem, BASE vs ACID</li>
-      </ul>
-    </p>
-    <p>
-      <ul>
-        <li>SQLAlchemy</li>
-        <li>Activity: SQLAlchemy</li>
-        <li>ORM</li>
-        <li>Activity: ORM</li>
-      </ul>
-    </p>
+  <xi:include href="sec-w2-d4.ptx" />
+  <section xml:id="sec-week-2-day-5">
+    <title>Friday</title>
     <p>
       <ul>
         <li>Pandas, Numpy</li>
@@ -29,9 +15,6 @@
         <li>Activity: Duckdb with Pandas</li>
       </ul>
     </p>
-  </section>
-  <section xml:id="sec-week-2-day-5">
-    <title>Friday</title>
     <p>
       <ul>
         <li>Non-relational databases: MongoDB</li>

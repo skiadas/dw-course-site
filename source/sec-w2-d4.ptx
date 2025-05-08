@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-2-day-4" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Thursday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>Distributed databases: replication, sharding, read/write consistency</li>
+        <li>Activity: demonstration</li>
+        <li>CAP theorem, BASE vs ACID</li>
+      </ul>
+    </p>
+    <p>
+      <ul>
+        <li>SQLAlchemy</li>
+        <li>Activity: SQLAlchemy</li>
+        <li>ORM</li>
+        <li>Activity: ORM</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w2-d4-distributed-databases-cap-theorem.ptx" />
+</section>

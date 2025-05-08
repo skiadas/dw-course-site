@@ -68,5 +68,78 @@
         <p>Restrict this data further so that we only see the country, year and total male population (WB_WDI_SP_POP_TOTL_MA_IN), and then pivot on the year column using the population values. The result should be two rows, one for DEU and one for USA, with one column for each year.</p>
         <p>Then do a variation of this where you have one column for each country, and the years are instead different rows. This would have a total of 3 columns.</p>
       </exercise>
+      <p>
+        Here is some practice data for some more pivoting goodness:
+      </p>
+      <program language="python">
+import duckdb
+from random import random
+import math
+
+duckdb.sql("""CREATE TABLE grade_points (
+    letter VARCHAR(2) NOT NULL,
+    points FLOAT NOT NULL,
+    PRIMARY KEY (letter)
+)""")
+grade_points = [
+    ("A", 4.00), ("A-", 3.67),
+    ("B+", 3.33), ("B", 3.0), ("B-", 2.67),
+    ("C+", 2.33), ("C", 2.00), ("C-", 1.67),
+    ("D+", 1.33), ("D", 1.00),
+    ("F", 0.00)
+]
+duckdb.executemany("INSERT INTO grade_points VALUES (?, ?)", grade_points)
+
+def randomGrade():
+    index = math.floor(random() * len(grade_points))
+    return grade_points[index][0]
+
+students = ["wahl", "skiadas", "lamarche"]
+courses = ["CS220", "CS223", "CS110", "CS243"]
+terms = [f"{period} {year}" for period in ["Fall", "Winter"] for year in range(2020, 2025)]
+
+def randomTerm():
+    return terms[math.floor(random() * len(terms))]
+
+grades = [
+    (student, course, randomTerm(), randomGrade())
+    for student in students
+    for course in courses
+    if random() > 0.3
+]
+
+duckdb.sql("""CREATE TABLE grades (
+    student TEXT NOT NULL,
+    course TEXT NOT NULL,
+    term TEXT NOT NULL,
+    grade VARCHAR(2),
+    FOREIGN KEY (grade) references grade_points (letter)
+)""")
+duckdb.executemany("INSERT INTO grades VALUES (?, ?, ?, ?)", grades)
+
+      </program>
     </paragraphs>
+      <exercises xml:id="exercises-duckdb-collecting-data">
+    <exercise>
+      <p>The <url href="https://www.fruityvice.com/">Fruityvice</url> API gives you information about fruits. Take a look at the API documentation and find out how to ask it for all the fruit data. Then read this data into a dictionary using httpx.</p>
+    </exercise>
+    <exercise>
+        <p>Continuing with that data, use a list comprehension to un-nest each object (there are <c>nutritions</c> facts that are in a sub-object, they should instead be at the same level as other information about the fruit) and write it to a json file (nicely indented) using json.dump. You will find it helpful to create a helper function, called <c>unnestOne</c> or something, that is given one fruit dictionary and returns the unnested version.</p>
+    </exercise>
+    <exercise>
+      <p>Using duckdb read this json file in and save the results both to a CSV file as well as a table in a duckdb database that you store in a file.</p>
+    </exercise>
+    <exercise>
+      <p>Using duckdb, generate a report showing the different "orders" of plants with a count of how many plants belong to each order.</p>
+    </exercise>
+    <exercise>
+      <p>Using duckdb, for each nutrition type create a report showing the top 3 fruits for that nutrition type.</p>
+    </exercise>
+    <exercise>
+      <p>Using UNPIVOT, produce a form of the data that contains a column with the nutrition names and a column for the corresponding values (instead of separate columns for each nutrition).</p>
+    </exercise>
+    <exercise>
+      <p>Using duckdb, collect a list of the highest value fruit for each order and each nutrition type. You may want to start with doing it for one nutrition type first if that's easier.</p>
+    </exercise>
+  </exercises>
 </subsection>
