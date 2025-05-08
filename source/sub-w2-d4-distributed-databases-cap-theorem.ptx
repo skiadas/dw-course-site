@@ -39,7 +39,7 @@
     </exercise>
     </paragraphs>
 </subsubsection>
-<subsubsection xml:id="subsubsec-types of replication">
+<subsubsection xml:id="subsubsec-types-of-replication">
   <title>Types of Replication</title>
   <p>
     Replication comes in two fundamentally different forms: master-slave replication, and peer-to-peer replication. In general the fundamental question is regarding reads and writes:
