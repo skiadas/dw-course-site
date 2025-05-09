@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-nosql-databases">
+  <title>NoSQL Database</title>
+  <introduction>
+    <p>There is a wide range of different database approaches out there, that are generically referred as NoSQL. What they all have in common is that they deviate from the relational database strict approach of tables with specific column types etc. They are namely <term>schema-less</term>.
+    <ul>
+      <li>
+        <p><term>column-oriented databases</term> like BigTable, Cassandra and HBase focus on column families as the primary unit of storage, as opposed to table rows. In effect each row contains sets of column values organized in <q>families</q>. This provides a richer structure to the normal relational database approach.</p>
+        <p>We will not be looking at any of these examples in this class.</p>
+      </li>
+      <li>
+        <p><term>document-oriented databases</term> like MongoDB and CouchDB focus on complex aggregate units called <em>documents</em> as their primary unit of storage. We can loosely think of a document as a JSON structure with all the information contained therein. One could say that document-based database think and act in JSON documents.</p>
+        <p>We will be taking a closer look at CouchDB in the following sections.</p>
+      </li>
+      <li>
+        <p><term>graph databases</term> like FlockDB and Neo4j focus on relations between objects, and they are particularly effective at encoding the complex interactions in social networks.</p>
+        <p>We will hopefully have some time to take a look at Neo4j.</p>
+      </li>
+      <li>
+        <p><term>key-value stores</term> like Riak and Redis offer very simple storage of values based on their keys. As a result they can be extremely efficient and fast. They are often used as in-memory cache stores. They are a great way to store session information.</p>
+        <p>We may take a brief look at Redis at some point.</p>
+      </li>
+    </ul>
+  </p>
+  <p>What these systems all have in common is that they do not follow the relational model, that they are schema-less, and that they are designed to perform well in clustered settings where the foreign-key/join constraints enforced in relational databases often get in the way.</p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-couchdb">
+    <title>CouchDB</title>
+    <p>
+      We will now take a closer look at CouchDB. Some of its key features:
+      <ul>
+        <li>It is a document-based database.</li>
+        <li>It is designed from the ground up to live in clusters on the web. We will in fact be communicating to it via HTTP requests.</li>
+        <li>It embraces the REST principles.</li>
+        <li>It is built with an emphasis on availability and partition tolerance, possibly sacrificing some consistency in the process.</li>
+      </ul>
+    </p>
+    <paragraphs>
+      <title>Installation</title>
+      <p>Traditionally CouchDB will be running in a replication cluster setting, but to keep it simple we will simply run it as a simple node, launched via a Docker container, and we'll keep the data size small. To get a CouchDB instance started, run the following</p>
+      <program language="shell">
+docker run -d \
+  --name my-couchdb \
+  -p 5984:5984 \
+  -e COUCHDB_USER=admin \
+  -e COUCHDB_PASSWORD=password \
+  couchdb
+      </program>
+      <p>When your codespace goes to sleep so will this CouchDB instance. To wake it up next time you log in, you need to do:
+      </p>
+      <program language="shell">
+      docker start my-couchdb
+      </program>
+      <p>
+        You now have a CouchDB instance running locally, on port 5984. Let's try to talk to it from the command line using curl:
+      </p>
+      <program language="shell">
+curl http://127.0.0.1:5984/
+      </program>
+      <p>You will see a somewhat condensed set of information that basically tells you that CouchDB is ready to work.</p>
+      <p>We will now start using httpx within Python to make the calls, so let's get started on that:</p>
+      <program language="python">
+        baseUrl = "http://127.0.0.1:5984/"
+        result = httpx.get(baseUrl).json()
+        print(result)
+      </program>
+      <p>
+        Before moving on, we need to do a bit of work with the online helper system called <term>Fauxton</term>. To visit that page, append <c>_utils</c> to the web-page link associated to port 5984 (you may need to visit the PORTS section in the editor). After logging in, click the Wrench icon on the left, then "Configure a Single Node" and just reenter your credentials and click "Configure Node".
+      </p>
+      <p>Next we'll create a database and add some entries.</p>
+    </paragraphs>
+    <paragraphs>
+      <title>Creating a database</title>
+      <p>
+        We could create the database from the web interface, but we will instead use httpx requests to get more used to them.
+      </p>
+      <p>
+        In general, you need to provide credentials along with your request to the database, and for our learning purposes we will be simply providing the admin credentials, but know that on a real system you'll need to do some more work. So all our requests will look something like this:
+      </p>
+      <program language="python">
+        result = httpx.get(baseRef + "...",
+          auth=("admin", "password"),
+          json=....)
+        # If no errors
+        result.json()
+      </program>
+      <p>The endpoint for a database is simply <c>/databaseName</c>. So to create a database we need to send a PUT request to that endpoint. Let's create a <c>fruits</c> database:</p>
+      <program language="python">
+        result = httpx.put(baseUrl + "/fruits", auth=("admin", "password"))
+        print(result.status_code)
+      </program>
+      <p>
+        You should get a response of 201, indicating "created". If you try to run it a 2nd time you will get 412, which stands for "precondition failed". The "precondition" here is that the database must not already exist. Interesting fact: If we were doing it in a cluster setting and it was set up to write to multiple replicas before confirming, we would have received a 202 the first time, which indicates "request accepted", but it has more processing to do. This is part of what I meant earlier by saying that CouchDB embraces HTTP and REST principles.
+      </p>
+      <p>
+        If you still have the web interface open and you click the cylinder icon, you should now see the <c>fruits</c> database showing up, taking up 0 space and containing 0 documents.
+      </p>
+      <p>
+        Let's delete the database!
+      </p>
+      <program language="python">
+        result = httpx.delete(baseUrl + "/fruits", auth=("admin", "password"))
+        print(result.status_code)
+        print(result.text)
+      </program>
+      <p>
+        You should see a 200 response the first time through and a 404 response the second time, as at that point the database doesn't exist.
+      </p>
+      <p>
+        Let's now do a GET on this endpoint, to get info about the database:
+      </p>
+      <program language="python">
+        def printJson(data):    # helper
+          print(json.dumps(data, indent=2))
+
+        result = httpx.get(baseUrl + "/fruits", auth=("admin", "password"))
+        print(result.status_code)
+        printJson(result.json())
+      </program>
+      <p>
+        Here's the result I got:
+      </p>
+      <pre>
+        {
+          "instance_start_time": "1746752365",
+          "db_name": "fruits",
+          "purge_seq": "0-g1AAAABPeJzLYWBgYMpgTmHgzcvPy09JdcjLz8gvLskBCeexAEmGBiD1HwiyEhlwqEtkSKqHKMgCAIT2GV4",
+          "update_seq": "0-g1AAAACLeJzLYWBgYMpgTmHgzcvPy09JdcjLz8gvLskBCeexAEmGBiD1HwiyMpgTGXKBAuyphiZmKYYp6HpwmJLIkFSPot3SLNXYwCINXXEWAAh8Kog",
+          "sizes": {
+            "file": 16692,
+            "external": 0,
+            "active": 0
+          },
+          "props": {},
+          "doc_del_count": 0,
+          "doc_count": 0,
+          "disk_format_version": 8,
+          "compact_running": false,
+          "cluster": {
+            "q": 2,
+            "n": 1,
+            "w": 1,
+            "r": 1
+          }
+        }
+        </pre>
+        <p>
+          You'll recognize the <c>n/w/r</c> entries from our brief discussion on quorums. Since we only have one node, they are all equal to 1.
+        </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Adding and removing documents</title>
+      <p>
+        The documents of the database are in an endpoint that looks like this: <c>/fruits/documentIdHere</c>. In order for a PUT to work we need to generate id for the document. Let's first try to instead do a POST at the database level, and see if it will add them for us. We'll use the fruits items from the last activity.
+      </p>
+      <program language="python">
+        fruits = httpx.get("https://www.fruityvice.com/api/fruit/all").json()
+        oneFruit = fruits[0]
+        # Post one the collection to add an item
+        # Or put to the item id
+        httpx.post(baseUrl + "/fruits", auth=("admin", "password"),
+        json=oneFruid)
+      </program>
+      <p>
+        Note the response:
+      </p>
+      <pre>
+      201
+      {
+        "ok": true,
+        "id": "006160f4f76a1d815785de4ff9000b65",
+        "rev": "1-09b15fe958b871c6af620ac409281de5"
+      }
+      </pre>
+      <p>
+        The object was added, with an id, actually <c>_id</c> internally, equal to this generated string. If you look at the database in the visual UI you will find that item there as well.
+      </p>
+      <p>
+        Let's try to add the second item by manually creating its id. We want to generate what is known as a UUID:
+      </p>
+      <program language="python">
+        from uuid import uuid4
+
+        _id = uuid4().hex
+        oneFruit["_id"] = _id
+        result = httpx.put(f"{baseUrl}/fruits/{_id}", auth=("admin", "password"),
+            json=oneFruit)
+        print(result.status_code)
+        printJson(result.json())
+      </program>
+      <p>
+        We can read or delete the item:
+      </p>
+      <program language="python">
+        result = httpx.get(f"{baseUrl}/fruits/{_id}", auth=("admin", "password"))
+        print(result.status_code)
+        print(result.text)
+
+        result = httpx.delete(f"{baseUrl}/fruits/{_id}", auth=("admin", "password"))
+        print(result.status_code)
+        print(result.text)
+      </program>
+      <p>
+        We can also use the <c>_uuids</c> endpoint to ask CouchDB to generate a UUID for us, if we don't want to do so for whatever reason.
+      </p>
+      <p>
+        Note that the delete reports a 409 error. The reason for that is usually not providing a revision history, in the form of the <c>_rev</c> field we see in the responses. When you want to update or delete, you must send a version of the object including a <c>_rev</c> (for a PUT), or must include a <c>rev</c> parameter (for a DELETE), and if it doesn't equal the most current version that CouchDB has, then your update or delete will be rejected. That's what the 409 message represents. This approach is called <abbr>MVCC</abbr>, standing for Multi-Version-Concurrency-Control.
+      </p>
+      <program language="python">
+      result = httpx.delete(f"{baseUrl}/fruits/{_id}", auth=("admin", "password"),
+                    params={ "rev": rev })
+      print(result.status_code)
+      printJson(result.json())
+      </program>
+      <exercise>
+        <p>
+          Starting fresh, write a program that will upload all the fruits from our list to the database. You should use the <url href="https://docs.couchdb.org/en/stable/api/server/common.html#uuids">/_uuids endpoint</url> (make sure you read how to make it return multiple ids) to ask if for exactly as many uuids as you need (however many fruits you need to add), then add each fruit. Confirm that the fruits are added. Note: There is a useful function called <c>zip</c> that given two lists forms a new list of tuples. So it would allow you to loop through two lists concurrently.
+        </p>
+      </exercise>
+    </paragraphs>
+    <paragraphs>
+      <title>Querying: Mango Queries</title>
+      <p>
+        To query for data we have a few options, but a key option is what CouchDB calls <term>Mango Queries</term>. Some key things to know about such queries:
+        <ul>
+          <li>You make queries at the <c>/dbName/_find</c> endpoint. These are POST requests.</li>
+          <li>To make queries you must specify a <term>selector</term>, which is essentially a JSON object describing what records we want.</li>
+          <li>You may also specify <term>fields</term>, which basically describe what values we want to keep at the end.</li>
+          <li>You can create indexes that would optimize certain queries, by making a POST request to the <c>/dbName/_index</c> endpoint.</li>
+        </ul>
+      </p>
+    </paragraphs>
+    <exercise>
+      <p>Starting from our grades database: Organize the grades as documents, with one document per combination of term and course, where the document contains a <c>term</c> key, a <c>course</c> key, and a list of the grades as student-grade dictionaries. Then write these into the database. then create queries that will pull out:
+        <ul>
+          <li>All documents for a particular course (e.g. CS220)</li>
+          <li>All documents for a particular term</li>
+          <li>All documents that have a student with a particular name (e.g. skiadas)</li>
+          <li>All documents where there is an F grade.</li>
+          <li>All documents where all grades are As or Bs</li>
+          <li>All documents for Winter terms (use regex)</li>
+        </ul>
+      </p>
+    </exercise>
+  </subsubsection>
+</subsection>
