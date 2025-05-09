@@ -9,6 +9,13 @@
         <li>Non-relational databases: Neo4j</li>
       </ul>
     </p>
+    <p>
+      <ul>
+        <li>Pandas, Numpy</li>
+        <li>Activity: Pandas, Numpy</li>
+        <li>Activity: Duckdb with Pandas</li>
+      </ul>
+    </p>
   </section>
   <section xml:id="sec-week-3-day-2">
     <title>Tuesday</title>

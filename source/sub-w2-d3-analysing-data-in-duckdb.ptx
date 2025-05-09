@@ -115,6 +115,7 @@ duckdb.sql("""CREATE TABLE grades (
     grade VARCHAR(2),
     FOREIGN KEY (grade) references grade_points (letter)
 )""")
+
 duckdb.executemany("INSERT INTO grades VALUES (?, ?, ?, ?)", grades)
 
       </program>

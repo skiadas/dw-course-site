@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-2-day-5" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Friday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>Non-relational databases</li>
+        <li>CouchDb</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w2-d5-nosql-databases.ptx" />
+</section>

@@ -6,19 +6,5 @@
   <xi:include href="sec-w2-d2.ptx" />
   <xi:include href="sec-w2-d3.ptx" />
   <xi:include href="sec-w2-d4.ptx" />
-  <section xml:id="sec-week-2-day-5">
-    <title>Friday</title>
-    <p>
-      <ul>
-        <li>Pandas, Numpy</li>
-        <li>Activity: Pandas, Numpy</li>
-        <li>Activity: Duckdb with Pandas</li>
-      </ul>
-    </p>
-    <p>
-      <ul>
-        <li>Non-relational databases: MongoDB</li>
-      </ul>
-    </p>
-  </section>
+  <xi:include href="sec-w2-d5.ptx" />
 </chapter>
