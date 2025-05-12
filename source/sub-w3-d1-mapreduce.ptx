@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-map-reduce">
+  <title>Map-Reduce</title>
+  <introduction>
+    <p>There is a general approach to dealing with large distributed document-based databases and extracting information from them, that is used in various ways across many different databases. It typically goes by the name <term>map-reduce</term>. We will discuss this first in the abstract, then afterwards specifically in the context of CouchDB and its Views feature.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-mapreduce-generals">
+    <title>Map-Reduce in General</title>
+    <p>The problem at hand is this: we are seeking to compute some summary information out of a large set of documents. For example say we want to simply count how many grades we have stored. The main problem is that this information is potentially distributed across many different machines. The map-reduce approach goes something like this:
+      <ul>
+        <li>Go through each document and decide what information is pertinent, then pass that information forward to the next step. This is called the <term>map</term> step, where each document produces 0 or more key-value pairs.</li>
+        <li>The next phase takes some of these key-value pairs and produces one value out of them. This is called <term>reduce</term>. Note that here the term <em>value</em> doesn't mean a single number. This could potentially be a list of a few numbers, a small dictionary etc. But the key is that it is a relatively small amount of information.</li>
+        <li>This reduce step may happen again with the results of previous reduce steps. One may call this a <term>rereduce</term>.</li>
+        <li>On some systems, a <term>finalize</term> step may be possible, that does some final work with the result of the reduce steps.</li>
+      </ul>
+    </p>
+    <p>
+      For our hypothetical example, imagine that our data is distributed across 3 different servers. The first has 6 grades stored, the second has 4 grades, and the third has 15. Then the process will go as follows:
+      <ul>
+        <li>Each server performs its <term>map</term> step and for each grades produces the key-value pair <c>count: 1</c>.</li>
+        <li>Each server then performs a <term>reduce</term> step on their mapped key-value pairs, then adds up the values. So the first server will produce the number 6, the second server will produce the number 4, and the third server will produce the number 15.</li>
+        <li>The servers then push those summary numbers to some central computing server, which then carries out a <term>rereduce</term> step to add together the 6, 4 and 15, and arrive at a final answer of 25.</li>
+      </ul>
+      The advantage of this process is that the map and first reduction process were essentially up to the individual servers, so they could all happen concurrently, and there was little work left to be done involving a combination of the servers.
+    </p>
+    <p>
+      Let's consider a second example: We want to find out the average GPA of all the grades. We run into a problem here: If the first server computes the average GPA of its 6 grades, and the second server computes the average GPA of its 4 grades, then we can't just average those two grades to find a overall average, because essentially the one that corresponds to the 6 grades should carry more weight towards the final computation. But here is what we could do:
+      <ul>
+        <li>Each server goes through each of their grades, and produces the corresponding points. Say for example the first server had 3 A grades and 3 B grades. Then it would produce three <c>points: 4.00</c> entries and three <c>points: 3.00</c> entries.</li>
+        <li>Then during the reduce step, the server will look at these entries and produce the pair <c>(3.5, 6)</c> consisting of the average GPA as well as the number of entries it corresponds to.</li>
+        <li>During the re-reduce step the meta-server that does that step will be receiving three entries that look something like this: <c>(3.5, 6)</c>, <c>(2.67, 4)</c>, and <c>(3.33, 15)</c>. It will then combine them by computing: <m>\frac{6}{25}\cdot 3.5 + \frac{4}{25}\cdot 2.67 + \frac{15}{25}\cdot 3.33 = 3.2652</m> for the overall GPA, and then report out the pair <c>(3.2652, 25)</c> (in case there was a further reduce step at a higher level).</li>
+      </ul>
+      With a bit of creativity you can produce a lot of information this way.
+    </p>
+    <exercise>
+      <p>Describe a map-reduce process for computing the range of grade points.</p>
+    </exercise>
+    <exercise>
+      <p>Imagine our data was the fruit data. Describe a process that would produce the top three fruits in terms of the amount of carbohydrates.</p>
+    </exercise>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-views-in-couchdb">
+    <title>Views in CouchDb</title>
+    <p>
+      CouchDB implements this map-reduce feature in what it calls <term>views</term>. In essence:
+      <ul>
+        <li>Views are created as part of what is called a <term>design document</term>, that effectively stores information about the particulars of our data application. This could be constraints on document entries, automatic updates to documents, or various different views of the data.</li>
+        <li>A view stores the results of a map process, sorted by the keys. This can by itself be used in effect as an index, to effectively get some information out. This requires some extra storage.</li>
+        <li>Updates to a document also cause corresponding updates to the view, but usually localized on just the changes to the particular document.</li>
+        <li>A view can be provided by a further reduce step, that summarizes the information in some way.</li>
+      </ul>
+      There are two limitations to the views, from our point of view. The first is that the code for the map and reduce steps is written in Javascript. While we could write it in Python, that requires installation of some libraries, and would take more time. The second is that the code is basically provided as a string in a JSON document, so basically all in one long line. Not very pretty to read. So we'll keep the examples simple.
+    </p>
+    <p>
+      First we will need some data to start with. The following script will create a table with a bunch of grades in it.
+    </p>
+    <program language="python">
+from random import random
+import math
+import httpx
+import json
+
+grade_points = [
+    ("A", 4.00), ("A-", 3.67), ("B+", 3.33), ("B", 3.0), ("B-", 2.67),
+    ("C+", 2.33), ("C", 2.00), ("C-", 1.67), ("D+", 1.33), ("D", 1.00), ("F", 0.00)
+]
+
+def findPoints(grade):
+    for (letter, points) in grade_points:
+        if grade == letter:
+            return points
+
+students = ["wahl", "skiadas", "lamarche", "stormer", "millar", "adams", "lambert"]
+courses = ["CS220", "CS223", "CS110", "CS243", "MAT243"]
+terms = [f"{period} {year}" for period in ["Fall", "Winter"] for year in range(2020, 2022)]
+
+def randomGrade():
+    index = math.floor(random() * len(grade_points))
+    return grade_points[index][0]
+
+def randomTerm():
+    return terms[math.floor(random() * len(terms))]
+
+grades = [
+    (student, course, randomTerm(), randomGrade())
+    for student in students
+    for course in courses
+    if random() > 0.11
+]
+
+with httpx.Client(base_url="http://127.0.0.1:5984",  auth=("admin", "password")) as client:
+    client.delete("/grades")     # Delete old database
+    client.put("/grades")        # Create database
+    for (student, course, term, grade) in grades:
+        # check if grade exists
+        found_docs = client.post("/grades/_find", json={
+            "selector": { "term": term, "course": course }
+        }).json()["docs"]
+        if len(found_docs) > 0:
+            obj = found_docs[0]
+        else:
+            id = client.get("/_uuids").json()["uuids"][0]
+            result = client.put(f"/grades/{id}", json={ "term": term, "course": course, "grades": [] })
+            obj = client.get(f"/grades/{id}").json()
+        # Now add to new grade in
+        obj["grades"].append({ "student": student, "grade": grade, "points": findPoints(grade) })
+        result = client.put(f"/grades/{obj["_id"]}", json=obj)
+    </program>
+    <p>
+      This produces documents with keys for <c>term</c> and <c>course</c>, and a key called <c>grades</c> whose value is a list of <c>student-grade-points</c> mini-dictionary.
+    </p>
+    <p>In order to get a view in place, we need to first create a design document. We'll do this in a new file that will also be used for the various queries.</p>
+    <program language="python">
+import json
+import httpx
+
+def printJson(data):
+    print(json.dumps(data, indent=2))
+
+with httpx.Client(base_url="http://127.0.0.1:5984",  auth=("admin", "password")) as client:
+    with open("designDoc.json") as f:
+        doc = json.load(f)
+        existingDoc = client.get(f"/grades/{doc["_id"]}")
+        if (existingDoc.status_code == httpx.codes.OK):
+            doc["_rev"] = existingDoc.json()["_rev"]
+        result = client.put(f"/grades/{doc["_id"]}", json=doc)
+    </program>
+    <p>For this to run we also need a design document. Here is a simple design document, stored in <c>designDoc.json</c>:</p>
+    <program language="json">
+{
+    "_id": "_design/summaries",
+    "views": {
+        "class-counts": {
+            "map": "function (doc) { emit(doc.course, doc.grades.length); }"
+        }
+    }
+}
+    </program>
+    <p>
+      So a few things to note. First of all a design document is a JSON document with a specific <c>_id</c> form, starting with <c>_design</c>. Then it has specific possible entries, one of which is <c>views</c>. This is a dictionary of the different views, with keys being the view names. Here I am creating a <c>class-counts</c> named view. It consists of a <c>map</c> step, which is itself a function that takes a document as input. The idea is that this function will be called for each document, and produce the zero or more key-value pairs. This function is expected to call <c>emit(key, value)</c> for each pair it wants to produce. This is a bit like <c>yield</c> in Python generators. For each document in the database this function will dig into the <c>grades</c> key, which is a list of all the student-grade-points entries, and computes the length of that list, i.e. the number of grades in that course.
+    </p>
+    <p>
+      We can stop there and see the corresponding mapped results. Let's do exactly that, by adding a step on our query file:
+    </p>
+    <program language="python">
+      # After the with open("designDoc...")
+      result = client.get("/grades/_design/summaries/_view/class-counts")
+      print(result.status_code)
+      printJson(result.json())
+    </program>
+    <p>
+      You should see a series of results, each consisting of the originating document <c>_id</c>, the <c>key</c> and the <c>value</c>. Note how these are currently ordered alphabetically by the key, and also note that the same key may appear multiple times (as a course is offered on multiple terms). But this is one way a view can be used, to see some slice of the information.
+    </p>
+    <p>
+      In order to find the total number of grades, we basically need to add up all the values. We can do this in a reduce step, by changing the design document:
+    </p>
+    <program language="json">
+{
+    "_id": "_design/summaries",
+    "views": {
+        "class-counts": {
+            "map": "function (doc) { emit(doc.course, doc.grades.length); }",
+            "reduce": "function (keys, values, rereduce) { let total = 0; for (const c of values) { total += c; } return total; }"
+        }
+    }
+}
+    </program>
+    <p>
+      Note first of all that this reduce function takes 3 parameters. The first two are lists of the keys and the values separately. This is useful as often we just want to do something with the values and can ignore the keys. The third is a boolean value: If it is true then we are in a rereduce case, where the values are the results of previous reduces, and where keys is null. Note also that the reduce function doesn't emit. It instead returns a value.
+    </p>
+    <p>
+      Run your query again and you should now see a total across all entries, as the result. Note that we can control the produced result by adding parameters to the call. For example we can prevent the reduce function from happening by adding <c>reduce=false</c>:
+    </p>
+    <program language="python">
+      result = client.get("/grades/_design/summaries/_view/class-counts",
+        params={ "reduce": False })
+      print(result.status_code)
+      printJson(result.json())
+    </program>
+    <p>
+      We can also tell the system that it should take into account the key when it reduces, to produce a different result for each key. This way we can find how many grades each course has gotten. for this we use the <c>group</c> parameter.
+    </p>
+    <program language="python">
+    result = client.get("/grades/_design/summaries/_view/class-counts",
+        params={ "group": True })
+    </program>
+    <p>We can also restrict which keys are being considered. We'll revisit that later.</p>
+    <p>
+      These are the basics of views in CouchDb. Let's look at our "computing GPA" example in this context. Recall that the key was to use as values a combination of both the gpa as well as how many numbers it represents. The first difference is that now we want to produce one entry per grade, and we will key it based on the student. The main challenge we have though is the following: When we do the first reduce, the values we deal with are just normal numbers (the points), while if we are doing a rereduce they would be dictionaries with entries for gpa and for count. So we must process the rereduce cases a bit differently. Here's what the code would look like if it was expanded:
+    </p>
+    <program language="javascript">
+      // map
+      function (doc) {
+        for (const grade of doc.grades)
+          emit(grade.student, grade.points);
+      }
+
+      // reduce
+      function (keys, values, rereduce) {
+        if (rereduce) {
+          const totalCount = values.reduce((pr, v) => pr + v.count, 0);
+          const gpaPoints = values.reduce((pr, v) => pr + v.points * v.count / totalCount, 0);
+          return { points: gpaPoints, count: totalCount };
+        } else {
+          const totalCount = values.length;
+          const gpaPoints = values.reduce((pr, v) => pr + v, 0) / totalCount;
+          return { points: gpaPoints, count: totalCount };
+        }
+      }
+    </program>
+    <p>And here is the updated design document:</p>
+    <program language="json">
+{
+    "_id": "_design/summaries",
+    "views": {
+        "class-counts": {
+            "map": "function (doc) { emit(doc.course, doc.grades.length); }",
+            "reduce": "function (keys, values, rereduce) { let total = 0; for (const c of values) { total += c; } return total; }"
+        },
+        "class-points": {
+            "map": "function (doc) { for (const grade of doc.grades) emit(grade.student, grade.points); }",
+            "reduce": "function (keys, values, rereduce) { if (rereduce) { const totalCount = values.reduce((pr, v) => pr + v.count, 0); const gpaPoints = values.reduce((pr, v) => pr + v.points * v.count / totalCount, 0); return { points: gpaPoints, count: totalCount }; } else { const totalCount = values.length; const gpaPoints = values.reduce((pr, v) => pr + v, 0) / totalCount; return { points: gpaPoints, count: totalCount }; } }"
+        }
+
+    }
+}
+    </program>
+    <p>We can now call on this new view we created, to get either overall gpa or individual student gpas:</p>
+    <program language="python">
+    # Overall gpa
+    result = client.get("/grades/_design/summaries/_view/class-points")
+    print(result.status_code)
+    printJson(result.json())
+
+    # gpa by student
+    result = client.get("/grades/_design/summaries/_view/class-points", params={ "group": True })
+    print(result.status_code)
+    printJson(result.json())
+    </program>
+    <paragraphs>
+      <title>Basic Python -- Javascript Translation</title>
+      <tabular>
+        <row header="yes">
+          <cell>Python</cell>
+          <cell>Javascript</cell>
+        </row>
+        <row>
+          <cell><c>x = 5 # Definition of x</c></cell>
+          <cell><c>let x = 5;</c> or <c>const x= 5;</c></cell>
+        </row>
+        <row>
+          <cell><c>if ...:</c></cell>
+          <cell><c>if (...) { ... }</c></cell>
+        </row>
+        <row>
+          <cell><c>for x in xs:</c></cell>
+          <cell><c>for (const x of xs) { ... }</c></cell>
+        </row>
+        <row>
+          <cell><c>x["foo"]</c></cell>
+          <cell><c>x.foo</c></cell>
+        </row>
+        <row>
+          <cell><c>True</c></cell>
+          <cell><c>true</c></cell>
+        </row>
+      </tabular>
+    </paragraphs>
+    <exercise>
+      <p>Create a view that when called with <c>group=True</c> will tell us how many As, how many A-s, how many B+s etc were awarded.</p>
+    </exercise>
+    <exercise>
+      <p>Create a view that when called with <c>group=True</c> will tell us what the average GPA per course would be, and another one that would do the same per term.</p>
+    </exercise>
+    <exercise>
+      <p>Create a view that when called with <c>group=True</c> will tell us what the highest grade obtained in that class is.</p>
+    </exercise>
+  <paragraphs>
+    <title>Compound keys</title>
+    <p>The keys we use don't have to be strings. They can instead be lists of strings, for example. And in that case we can do grouping queries that target different levels. For example the following map function will store the grades/points keyed by the triple of the student, the term, and the course, in that order. It uses the same reduce function as the other points computation:
+    </p>
+    <program language="json">
+        "class-points-student-term-course": {
+            "map": "function (doc) { for (const grade of doc.grades) emit([grade.student, doc.term, doc.course], grade.points); }",
+            "reduce": "function (keys, values, rereduce) { if (rereduce) { const totalCount = values.reduce((pr, v) => pr + v.count, 0); const gpaPoints = values.reduce((pr, v) => pr + v.points * v.count / totalCount, 0); return { points: gpaPoints, count: totalCount }; } else { const totalCount = values.length; const gpaPoints = values.reduce((pr, v) => pr + v, 0) / totalCount; return { points: gpaPoints, count: totalCount }; } }"
+        }
+    </program>
+    <p>We can now query this view at different "levels" using the <c>group_level</c> parameter:</p>
+    <program language="python">
+    # gpa by student
+    result = client.get("/grades/_design/summaries/_view/class-points-student-term-course", params={
+        "group": True, "group_level": 1 })
+    print(result.status_code)
+    printJson(result.json())
+
+    # gpa by student + term
+    result = client.get("/grades/_design/summaries/_view/class-points-student-term-course", params={
+        "group": True, "group_level": 2 })
+    print(result.status_code)
+    printJson(result.json())
+
+    # gpa by student + term + course
+    result = client.get("/grades/_design/summaries/_view/class-points-student-term-course", params={
+        "group": True, "group_level": 3 })
+    print(result.status_code)
+    printJson(result.json())
+    </program>
+  </paragraphs>
+  </subsubsection>
+</subsection>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-moviedata">
+  <title>Practice: Collecting Movie data</title>
+  <introduction>
+    <p>In this section we will prepare the ground for discussing graph databases, by downloading and storing data from the <url href="https://www.themoviedb.org/">The Movie Database</url>.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-moviedata-api-setup">
+    <title>Initial API setup</title>
+    <p>
+      In order to work with the Movie Database you will need to request and obtain an API key. In order to do that you will first need an account. Head over to the <url href="https://www.themoviedb.org/signup">Signup page</url> and register a free account. Then log in to the site and <url href="https://www.themoviedb.org/settings/api">request an API key</url>. Once you have acquired the key, that page will provide you with an <term>API Read Access Token</term>, a long string that we will use to log in to the service in our requests.
+    </p>
+    <p>The way we provide that authentication is by adding to our requests a header with key <c>"Authorization"</c> and value <c>"Bearer ..."</c> where the three dots are the long read-access-token string. We can create a client that will talk to the service for us with the following:
+    </p>
+    <program language="python">
+client = httpx.Client(
+        base_url="https://api.themoviedb.org/3",
+        headers={ "Authorization": "Bearer ......" })
+
+# do stuff with client
+client.close()
+    </program>
+    <p>
+      Let's try out the client. A basic request we can make is to the "configuration" endpoint:
+    </p>
+    <program language="python">
+    result = client.get("/configuration")
+    print(result.status_code)
+    printJson(result.json())
+    </program>
+    <p>You should see details on various configuration settings. In general, the pages you want to be consulting to find out what calls you can make are all listed in the <url href="https://developer.themoviedb.org/reference/intro/getting-started">documentation</url>. Find the "Configuration" category down the left, then its "Details" tab.</p>
+    <exercise>
+      <p>Look for the Genres endpoint, specifically for the genres used in movies. Make a call to that endpoint and write the results as a json file, then use duckdb to also write it as a CSV file. The resulting rows should contain an entry for id and an entry for name.</p>
+    </exercise>
+    <p>Here is the general process we will use to obtain information:
+      <ul>
+        <li>There is a "discover movies" endpoint that can give us movies based on criteria. We will ask it to return results based on popularity. The results are "paginated", so we can ask for the first page, get and process some results, then ask for the second page, and so on.</li>
+        <li>For a particular movie there are two endpoint of interest, once we know of an id. One is the "movie details" endpoint, which can give us information such as budget, earnings etc. Another is the "movie credits" endpoint where we can find out about the actors (or directors, producers etc if we were so inclined).</li>
+        <li>We can also directly access an actor's details based on their id, and find out a bit more about them.</li>
+      </ul>
+      Let's get started.
+    </p>
+    <exercise>
+      <p>Take a look at the description of the "discover movies" endpoint, and ask it to return to you the first page of results based on descending popularity.</p>
+      <p>
+        Then, for the first movie, use its id and call the "movie details" endpoint and retrieve the resulting dictionary. Also look at the "movie credits" endpoint and grab the "cast" key from the results. Add it to the dictionary you obtained with the movie details.
+      </p>
+      <p>Finally, make a <c>movies</c> table in CouchDb and add an entry for this movie.</p>
+    </exercise>
+    <exercise>
+      <p>Now that you have this going for one movie, delete and recreate the database, and use the above process to add all the movies you received from that request.</p>
+      <p>Once you can do that, and check the database that it looks OK, repeat the process for pages 1 through 50. This will add a total of 1000 movie entries into the database.</p>
+    </exercise>
+    <exercise>
+      <p>
+        Using the normal CouchDb <url href="https://docs.couchdb.org/en/stable/ddocs/mango.html#find-selectors">query structure</url>, (in particular you will need a <c>$elemMatch</c> at some point), find all movies in the list that star Ben Affleck.
+      </p>
+      <p>
+        Next, find those movies starring Ben Affleck but only in the top 3 roles (there is an "order" field in the cast entries).
+      </p>
+      <p>
+        Next, find those movies that star both Ben Affleck and Amy Adams.
+      </p>
+    </exercise>
+    <exercise>
+      <p>Create a view for this table, called <c>actors</c>. Its keys should be the actor names and its values should be the corresponding movie titles. Its reduce function should simply do a count. (You can first try the view without a reduce step.)</p>
+      <p>Then query this view to find out how many casting entries there are in total. If you are using the same script file to create the view and then immediately execute the query, you will need to add a <c>time.sleep(5)</c> after creating the design document and before trying to query the view, as it takes time for the system to prepare the view for that many entries.</p>
+      <p>
+        Then query the view asking it to group, to obtain a list of all actors with the number of movies in store for each. Add a limit of 100 or it will go on forever.
+      </p>
+      <p>
+        Then query the view to show you all the actors starting with B. You can do this by specifying a <c>startkey</c> of <c>"B"</c> and an <c>endkey</c> of <c>"C"</c>. Note that you need to set the value of <c>startkey</c> to be something like <c>json.dumps("B")</c> because you want to end up with the value including the quotes.
+      </p>
+      <p>Then, query this view by using the <c>keys</c> parameter and the <c>reduce</c> parameter to turn off the reduction and have it show you all movies for Ben Affleck and Amy Adams.</p>
+    </exercise>
+  </subsubsection>
+</subsection>
