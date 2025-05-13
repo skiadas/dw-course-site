@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-3-day-2" xmlns:xi="http://www.w3.org/2001/XInclude">
+    <title>Tuesday</title>
+    <introduction>
+    <p>
+      <ul>
+        <li>Non-relational databases: Neo4j</li>
+      </ul>
+    </p>
+    </introduction>
+  <xi:include href="sub-w3-d2-graph-databases.ptx" />
+  <xi:include href="sub-w3-d2-neo4j.ptx" />
+</section>

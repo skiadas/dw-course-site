@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-graph-databases">
+  <title>Graph Databases</title>
+  <p>Graph Databases are built around the idea of a <url href="https://neo4j.com/docs/getting-started/appendix/graphdb-concepts/"><term>property graph</term> database model</url>. This model describes the database contents in two ways:
+    <ul>
+      <li><term>Nodes</term> are discrete entities that have <term>labels</term> classifying them (e.g. Person, Actor, Movie) as well as a number of key-value <term>properties</term> providing extra information.</li>
+      <li>Nodes are connected with relationships. A <term>relationship</term> is a one-directional connection from one node to another that has a <term>type</term> describing what kind of connection it is. A relationship can also have key-value properties with extra information.</li>
+    </ul>
+  </p>
+  <p>
+    As a simple example let's consider a Movies graph database that we will work on creating. This database can have a number of different and relationships:
+    <ul>
+      <li>We can have nodes with the label of <c>Movie</c>, with properties for title, release date, budget, earnings etc.</li>
+      <li>We can have nodes with the label of <c>Person</c>, and some of those may also have the second label of <c>Actor</c>. Properties of such a node may be the name of the person, their year of birth or death, etc.</li>
+      <li>We can have nodes that represent a <c>Genre</c>. They would have properties for the genre name (maybe id).</li>
+      <li>We have a <c>BELONGS_TO</c> relationship from a Movie node to a Genre node, if that movie belongs to that genre.</li>
+      <li>We have an <c>ACTS_IN</c> relationship from an Actor node to a Movie node. This may have the extra properties of the character name and the casting order.</li>
+      <li>We may have a <c>PRODUCES</c> relationship from a Person to a Movie, if that person produced the movie. Similarly we might have a <c>DIRECTS</c> relationship.</li>
+    </ul>
+  </p>
+  <exercise>
+    <p>Consider a few more node types and relationships we could add to our graph.</p>
+  </exercise>
+  </subsection>

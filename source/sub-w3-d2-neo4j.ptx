@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-neo4j">
+  <title>Neo4J</title>
+  <p>Neo4J is one database that implements this property graph database model. We will run it in a similar vein to how we ran CouchDb, by using a docker container:</p>
+  <program language="shell">
+    docker run -d \
+        --publish=7474:7474 --publish=7687:7687 \
+        --env=NEO4J_AUTH=none \
+        --name=my-neo4j \
+        neo4j
+  </program>
+  <p>We also need to load a library to help us talk to this server, as the interface is not exposed properly in a HTTP/REST way.</p>
+  <program language="shell">
+    pip install neo4j
+  </program>
+  <p>
+    To access the library from Python we would do something like this:
+  </p>
+  <program language="python">
+    from neo4j import GraphDatabase
+
+    with GraphDatabase.driver("neo4j://0.0.0.0:7687", auth=None) as driver:
+      # do stuff with driver
+      driver.execute_query(...)
+  </program>
+  <p>
+    The queries are written in a language called <url href="https://neo4j.com/docs/cypher-manual/current/introduction/">Cypher</url> that we will take a closer look at. The key commands in the language are:
+    <ul>
+      <li><c>CREATE</c> is used to create new nodes or relationships</li>
+      <li><c>MATCH</c> is used like <c>SELECT</c>in SQL, to find nodes with specific properties, and bind them to a variable.</li>
+      <li><c>RETURN</c> specifies what results the query would return.</li>
+      <li><c>DETACH DELETE</c> is used to remove a node and any associated relationships.</li>
+      <li><c>SET</c> can be used to add labels or properties, while <c>REMOVE</c> can be used to remove them.</li>
+      <li><c>MERGE</c> can be used to ensure a certain pattern exists (or create it otherwise).</li>
+    </ul>
+    There are more, but these will be enough to start with. For example the following Cypher query can be used to wipe out the database:
+  </p>
+  <program language="$">
+    MATCH (n) DETACH DELETE n
+  </program>
+  <p>
+    This simple instruction tells Neo4J to match to the variable n a node with no particular conditions (i.e. it will match all nodes), and to then detach-delete this node, removing it and all its relationships.
+  </p>
+  <p>
+    In general, nodes are denoted in the language with something like this:
+  </p>
+  <program language="$">
+    (p:Person { name: 'Peter' })
+  </program>
+  <p>
+    The above specifies that the variable <c>p</c> would match a node with label <c>Person</c> and a property name with value Peter. Depending on what we are doing we may be creating such a node, or matching all such notes in the database.
+  </p>
+  <p>
+    To represent relationships we draw arrows between nodes. So we might for example write something like this:
+  </p>
+  <program language="$">
+    (charlie:Person {name: 'Charlie Sheen' })-[:ACTS_IN { character: 'Bud Fox'}]-&gt;(wallStreet:Movie { title: 'Wall Street' })
+  </program>
+  <p>
+    This describes a person, a movie, as well as a relationship between the two, using that bracketed arrow syntax.
+  </p>
+  <p>
+    Equipped with this rudimentary knowledge let's look into moving our movies information from our couchdb database over to neo4j. In order to do that we could read each movie document and process it in some way. We could also use some views, if we really only cared about parts of the document, but we will likely need to process most of the information in a movie. By default the request for elements only returns 25 hits for us (setting a limit parameter). We could ask it to return all the hits, as we know how many there are. But a better approach would be to learn how to do <term>pagination</term>:
+    <ul>
+      <li>The general philosophy is that each time we ask for <em>the next however many elements</em>. So the first call gives us the first 25 movies, then we want the next call to give us the next 25.</li>
+      <li>We need some way to be able to tell the system where to pick up next time. Different systems implement this part differently. In the CouchDb <c>_find</c> endpoint, we can use the <c>bookmark</c> value that was returned to us. If we include it in the followup request, the system will know where to pick up.</li>
+    </ul>
+    So our general approach for how we will do this is as follows:
+  </p>
+  <program language="python">
+    with httpx.Client(base_url="http://127.0.0.1:5984/movies", auth=("admin", "password")) as client:
+        bookmark=None
+        while True:
+            (docs, bookmark) = makeRequest(client, bookmark)
+            if len(docs) == 0:   # no more documents
+                break
+            for movie in docs:
+                processMovie(movie)
+  </program>
+  <p>
+    We use here two helper functions. The first, <c>makeRequest</c>, simply makes the request and returns the pair of the matches and the next bookmark:
+  </p>
+  <program language="python">
+    def makeRequest(client, oldBookmark):
+        results = client.post("/_find", json={
+            "bookmark": oldBookmark,
+            "selector": {},
+            "fields": [
+                "id", "title", "genres", "credits", "budget", "revenue",
+                "popularity", "runtime", "release_date", "cast"]
+            }).json()
+        return (results["docs"], results["bookmark"])
+  </program>
+  <p>
+    Note that we are asking for only specific fields, so as not to overwhelm the system. We use an empty selector so as to match all movies. And we include the bookmark entry to keep getting new results.
+  </p>
+  <paragraphs>
+    <title>Creating with Cypher</title>
+      <p>
+    Now all we need to do is write the <c>processMovie</c> function. It is meant to create a new movie entry but then also possibly add the actors in the cast, and also create any relationships. We will do this in steps:
+    <ul>
+      <li>CREATE the movie</li>
+      <li>MERGE the actors provided in the cast</li>
+      <li>CREATE relationships between that movie and those actors</li>
+      <li>MERGE the genres listed in the genres field</li>
+      <li>CREATE relationships between that movie and those genres</li>
+    </ul>
+    We can do this with a Cypher query as follows:
+  </p>
+  <program language="python">
+    def processMovie(movie):
+        cast = movie["cast"]
+        genres = movie["genres"]
+        movie = { key: movie[key] for key in movie if key not in ["cast", "genres"] }
+        driver.execute_query("""
+        CREATE (m:Movie $movieParams)
+        FOREACH (cast in $cast |
+            MERGE (a:Actor { id: cast.id, name: cast.name, gender: cast.gender })
+            CREATE (a)-[:ACTS_IN { character: cast.character, order: cast.order }]-&gt;(m)
+        )
+        FOREACH (genre in $genres |
+            MERGE (g:Genre { id: genre.id, name: genre.name })
+            CREATE (m)-[:BELONGS_TO]-&gt;(g)
+        )
+        """, parameters_= {
+            "movieParams": movie,
+            "cast": cast,
+            "genres": genres
+        })
+  </program>
+  <p>
+    Lots to unpack here, so let's dive in.
+     <ul>
+      <li>The first few lines are nothing complex, we simply take out the cast and genres lists from the movie object. That's because those will be stored as relationships, and not directly at movie object. Then the query starts. It essentially contains three instructions, listed below each other and executed in order.</li>
+      <li>First we create a new movie with <c>CREATE (m:Movie $movieParams)</c>, providing the movie parameters to it, and assigning it to the variable <c>m</c> for further use. The dollar sign here tells Cypher to look for a parameter called <c>movieParams</c>, and we provide that in the <c>parameters_</c> part of the call.</li>
+      <li>Then we use the FOREACH clause with the provided list <c>cast</c>, passed in the <c>parameters_</c>. This clause goes through each item in that list, assigns it to the variable <c>cast</c>, then executes the clauses after the vertical line until the closing parentheses.</li>
+      <li>The first of those clauses in the FOREACH is a MERGE clause that looks for an actor with a particular id, name and gender, and assigns that actor to the variable <c>a</c>. It creates such an actor if one doesn't exist yet.</li>
+      <li>The second of the clauses uses CREATE to create the relationship between the actor <c>a</c> and the movie <c>m</c>. The bracket in the middle of that clause creates the relationship.</li>
+      <li>The second FOREACH handles the same question but now with regards to genres, creating any needed genres in the process.</li>
+      <li>This set of 7-8 lines has now added all the details about that particular movie, including creating nodes for all the actors and all the genres, as well as the 1000 movies, and also relations between movies and actors or genres.</li>
+     </ul>
+    </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Querying with Cypher</title>
+      <p>In this part we will start a new file, and use it to query this database we created. We will start with a simple question, we want to know how many genres there are, maybe even look at them.</p>
+      <program language="python">
+        from neo4j import GraphDatabase, Result
+
+        driver = GraphDatabase.driver("neo4j://0.0.0.0:7687")
+
+        results = driver.execute_query("""
+            MATCH (g:Genre)
+            RETURN g.id AS id, g.name AS name
+            ORDER BY name
+        """, result_transformer_= Result.to_df)
+
+        print(results)
+      </program>
+      <p>
+        We have used here a special <c>result_transformer</c> which returns a "pandas dataframe", that we will learn more about later. But that is what makes the nicely printed out list of matches.
+      </p>
+      <p>
+        Let's talk about the query pattern here. We specify what we are looking for using MATCH, then we choose something to RETURN, and we can use aliases to give other names to the resulting bits. If we use the transformer we have to return those individual entries, but otherwise we could simply <c>RETURN g</c> then do something with those returned objects, although it would require digging in a bit deeper.
+      </p>
+      <p>
+        If we wanted just the count we could instead do:
+      </p>
+      <program language="python">
+        MATCH (g:Genre)
+        RETURN COUNT(g)
+      </program>
+      <p>
+        Now let's kick it up a notch. Let's say we want to find out action movies where Ben Affleck is one of the top 3 cast. We can do the following:
+      </p>
+      <program language="$">
+        MATCH (a:Actor { name: 'Ben Affleck' })-[cast:ACTS_IN]-&gt;(m:Movie)
+            -[:BELONGS_TO]-&gt;(g:Genre { name: 'Action' })
+        WHERE cast.order &lt; 3
+        RETURN m.title, cast.character, cast.order
+      </program>
+      <p>We can also use multiple matches, we don't need to squeeze everything in one go (and can also separate them with commas). For example let's find comedy or drama movies that Ben Affleck and Matt Damon have co-starred:
+      </p>
+      <program language="$">
+        MATCH (ben:Actor { name: 'Ben Affleck' }),
+              (matt:Actor { name: 'Matt Damon' })
+        MATCH (movie:Movie)-[:BELONGS_TO]->(g:Genre)
+        MATCH (ben)-[:ACTS_IN]->(movie),
+              (matt)-[:ACTS_IN]->(movie)
+        WHERE g.name = 'Comedy' OR g.name = 'Drama'
+        RETURN movie.title, g.name
+      </program>
+      <p>
+        Let's close up with a fun example that this kind of database is ideal for. We want to play the "6 degrees of separation" game. We want to find out the shortest chain we can form that says something like "Ben Affleck was in a movie with ... who was in a movie with ... who was in a movie with ... and so on however many times we need until we reach Cary Grant". We can do this very easily in Cypher:
+      </p>
+      <program language="$">
+        MATCH (ben:Actor { name: 'Ben Affleck' }),
+              (cary:Actor { name: 'Cary Grant' })
+        MATCH path = shortestPath( (ben)-[:ACTS_IN*1..]-(cary) )
+        UNWIND [n in nodes(path) | coalesce(n.name, n.title) ] as step
+        RETURN step
+      </program>
+      <p>
+        Briefly what is going on here is we define the two actors. Then we ask for a shortest path that involves using any number of ACTS_IN relationships, and we get the resulting path as the answer. Then we use <c>[n in nodes(path) | coalesce(n.name, n.title) ]</c> to go through each node in the path and retrieve either its name (if it is an actor) or its title (if it is a movie). This will give us a list of things. We use <c>UNWIND</c> to turn that list into a column of results for easier reading. The resulting list tells us that Affleck was in "Justice League" with Marc McClure, who was in "Back to the Future" with Arthur Tovey, who was in "North by Northwest" with Cary Grant. So there were 3 movies we needed to go through to get there, and we calls this "3 degrees of separation". Try with some other actor pairs and see what you can get.
+      </p>
+    </paragraphs>
+    <exercises xml:id="exercises-neo4j-practice">
+      <exercise>
+        <p>For two actors/actresses of your choice, determine how many movies they have both been in.</p>
+      </exercise>
+      <exercise>
+        <p>
+          For a list of actors/actresses passed as a parameter, compute for each pair how many movies they have both been in. Omit the cases of 0, and list in reverse order of number of movies.
+        </p>
+      </exercise>
+      <exercise>
+        <p>List all actors that have been the top cast in at least 3 movies from the list.</p>
+      </exercise>
+      <exercise>
+        <p>Find all movies where the top 3 cast are (in any order) Ben Affleck and two (female) actresses. You should find one hit.</p>
+      </exercise>
+      <exercise>
+        <p>Find all movies where a given actress of your choice has been the only female in the top 3 roles.</p>
+      </exercise>
+    </exercises>
+</subsection>
