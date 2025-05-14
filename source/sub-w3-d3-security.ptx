@@ -149,6 +149,7 @@
     <li><term>Limiting access</term>  It is often important to restrict the actions that can be taken. This is often described as running in a <em>sandbox</em> environment. A physical example would be that you may be allowed to access certain files in a room, but you may be forbidden from copying them or taking them out of the room. Another example would be access to a limited set of resources. For instance most faculty on campus have keys to their office building but not to other buildings, while some select personnel have master keys that can open any door on campus.</li>
     <li><term>Revoking access</term>  The system should be able to revoke the access it has given to someone, e.g. if they get fired. For example, we can change the locks on a door, to revoke access using a specific physical key.</li>
   </ul>
+</p>
   <exercise>
     <p>
       Consider the following two approaches to guarding a room. The goal is that only those authorized should be able to access the room.
@@ -161,7 +162,6 @@
     What are the relative merits and vulnerabilities of each system? How does each system authenticate you? How easy is it to circumvent each system for various attack methods?
     </p>
   </exercise>
-</p>
 <p>There are fundamentally two ways in which one can provide access control.
   <ul>
     <li>
