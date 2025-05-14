@@ -69,13 +69,19 @@
   </ul>
 </p>
 <exercise>
-  Think of usages of your college ID around campus. Which of these usages involve authentication? What kind of authentication is it (you as a specific person, you as just a student, you as someone who should have access to certain area)?
+  <p>
+    Think of usages of your college ID around campus. Which of these usages involve authentication? What kind of authentication is it (you as a specific person, you as just a student, you as someone who should have access to certain area)?
+  </p>
 </exercise>
 <exercise>
-  Think of other practical examples of identification and authentication.
+  <p>
+    Think of other practical examples of identification and authentication.
+  </p>
 </exercise>
 <exercise>
-  Think of computer-related examples of identification and authentication.
+  <p>
+    Think of computer-related examples of identification and authentication.
+  </p>
 </exercise>
 
 <p>One topic worthy of discussion is the difference between <em>identity verification</em> and <em>authentication</em>. In general, authentication is more secure. The difference can be seen in a bank giving someone access to their account. Simply presenting an ID to verify your identity would not be sufficient to authenticate you as an account holder. You will likely need to possibly know the account number or have a bank card or key.</p>
@@ -89,26 +95,36 @@
   </ul>
 </p>
 <exercise>
-  Classify the following factors:
+  <p>
+    Classify the following factors:
   <ul>
     <li>Your Hanover password</li>
     <li>Your face when compared to a photograph</li>
     <li>A secret handshake</li>
   </ul>
+  </p>
 </exercise>
 <exercise>
-  How does your phone identify you and lets you access it?
+  <p>
+    How does your phone identify you and lets you access it?
+  </p>
 </exercise>
   <p>A common practice is the so-called <term>multi-factor authentication</term>, when we are using more than one factor to authenticate. A special case is the so-called two-factor authentication. For instance many online games now require you to download an <q>authenticator</q> to your phone, and when you want to log in to the game you need to both type your password (something you know) and type in the number shown on the authenticator (something you have).</p>
   <p>Another example of this is using an ATM. You need to both have your debit card (something you have) and type in your PIN (something you know).</p>
   <exercise>
-    Describe the authentication systems, if any, in place when using a credit card for a purchase, both physically at a store as well as online.
+    <p>
+      Describe the authentication systems, if any, in place when using a credit card for a purchase, both physically at a store as well as online.
+    </p>
   </exercise>
   <exercise>
-    When you use your Hanover ID to pay at the Campus Center, what authentication factor(s) does this use? What other factors can we add to make the process more secure?
+    <p>
+      When you use your Hanover ID to pay at the Campus Center, what authentication factor(s) does this use? What other factors can we add to make the process more secure?
+    </p>
   </exercise>
   <exercise>
-    When you pick up your campus mail, what authentication factor(s) does this use? What other factors can we add to make the process more secure?
+    <p>
+      When you pick up your campus mail, what authentication factor(s) does this use? What other factors can we add to make the process more secure?
+    </p>
   </exercise>
   </subsubsection>
   <subsubsection xml:id="subsubsec-authorization">
@@ -134,7 +150,8 @@
     <li><term>Revoking access</term>  The system should be able to revoke the access it has given to someone, e.g. if they get fired. For example, we can change the locks on a door, to revoke access using a specific physical key.</li>
   </ul>
   <exercise>
-    Consider the following two approaches to guarding a room. The goal is that only those authorized should be able to access the room.
+    <p>
+      Consider the following two approaches to guarding a room. The goal is that only those authorized should be able to access the room.
     <ul>
       <li>A guard checks your ID against an access list they have in a clipboard.</li>
       <li>A guard stands by the door and you must tell them what the password is.</li>
@@ -142,6 +159,7 @@
       <li>People who should have access are given keycards they can scan in order to unlock the door and must also do a fingerprint scan.</li>
     </ul>
     What are the relative merits and vulnerabilities of each system? How does each system authenticate you? How easy is it to circumvent each system for various attack methods?
+    </p>
   </exercise>
 </p>
 <p>There are fundamentally two ways in which one can provide access control.
@@ -155,11 +173,15 @@
       <p>Another example of this would be a prescription for a medicine. Anyone can pick up the medicine as long as they have the filled out prescription (and possibly an ID).</p>
     </li>
   </ul>
+</p>
   <exercise>
-  Think of other authorization situations from your experience, and describe them according to the aforementioned groups.
+  <p>
+    Think of other authorization situations from your experience, and describe them according to the aforementioned groups.
+  </p>
   </exercise>
   <exercise>
-    Classify the following authorization approaches:
+    <p>
+      Classify the following authorization approaches:
     <ul>
       <li>A VIP list and area at a club</li>
       <li>Access to your registrar office information at myhanover</li>
@@ -167,8 +189,8 @@
       <li>Using your access token to the TMDB database</li>
       <li>Using an electronic discount code</li>
     </ul>
+    </p>
   </exercise>
-</p>
 </paragraphs>
   </subsubsection>
 </subsection>
