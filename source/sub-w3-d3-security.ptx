@@ -35,7 +35,9 @@
       </ul>
     </p>
     <exercise>
-      Suppose that the "data" we want to protect is the contents of a specific piece of paper on the desk in your room. Consider the kinds of possible attacks on that data, based on the aforementioned four groups. Consider various approaches to "securing" this data against these attacks, and their tradeoffs/vulnerabilities regarding the above three concepts.
+      <p>
+        Suppose that the "data" we want to protect is the contents of a specific piece of paper on the desk in your room. Consider the kinds of possible attacks on that data, based on the aforementioned four groups. Consider various approaches to "securing" this data against these attacks, and their tradeoffs/vulnerabilities regarding the above three concepts.
+      </p>
     </exercise>
     <exercise>
       <p>Before electronic evaluation forms were a thing, we used a system that worked as follows:
