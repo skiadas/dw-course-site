@@ -4,22 +4,14 @@
   <title>Week 3</title>
   <xi:include href="sec-w3-d1.ptx" />
   <xi:include href="sec-w3-d2.ptx" />
-  <section xml:id="sec-week-3-day-3">
-    <title>Wednesday</title>
-    <p>
-      <ul>
-        <li>Security: Generals, C-I-A, Authorization vs Authentication</li>
-        <li>Practical Cryptography</li>
-      </ul>
-    </p>
+  <xi:include href="sec-w3-d3.ptx" />
+  <section xml:id="sec-week-3-day-4">
+    <title>Thursday</title>
     <p>
       <ul>
         <li>Web Scraping, Beautiful Soup</li>
       </ul>
     </p>
-  </section>
-  <section xml:id="sec-week-3-day-4">
-    <title>Thursday</title>
     <p>
       <ul>
         <li>More Web-scraping</li>

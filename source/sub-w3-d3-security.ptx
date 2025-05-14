@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-security">
+  <title>Security</title>
+  <introduction>
+    <p>
+      In this section we collect a variety of information related to security, culminating in a description of how to properly access or offer access to protected resources.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-security-in-general">
+    <title>Security in General</title>
+    <p>We start with a broad description of security principles. There are three key areas of concern when discussing security, commonly abbreviated as C-I-A:
+      <ul>
+        <li><term>Confidentiality</term>: Our ability to protect the data from those not authorized to access it. A good example of this principle is the advice to not share with anyone what your password is. For example, we try to preserve confidentiality when we make sure noone is looking at us as we type in our password, or if we try to hide the ATM screen when typing in our PIN.</li>
+        <li><term>Intergrity</term>: Our ability to prevent change in our data in an unauthorized or undesirable manner. This of course includes preventing unauthorized access, but it also incorporates the ability to recover and reverse any undesirable changes. A common example of this is our use of hard drive or database backups, so that if something happens to our computer we don't lose all our data. Integrity is particularly important for example in medical information, as corrupted data may result in the wrong treatment given to a patient.</li>
+        <li><term>Availability</term>: Our ability to provide the data when needed to those authorized to access it. For example we can provide confidentiality and integrity by burying a hard drive inside a block of concrete, but then we also lose our ability to get to that data. Another example of loss of availability is the so-called Denial of Service (DoS) attacks.</li>
+      </ul>
+      These areas often run against each other, and trying to strengthen one of them may weaken another.
+    </p>
+    <p>
+      Here are some example tradeoffs:
+      <ul>
+        <li>In our evaluations system internals, we break the link between a student and the evaluation they have submitted. As a result we provide increased confidentiality to that student: Noone can see what you have said and know it came from you. But this comes at the cost of availability: We can no longer show you what you submitted. If a student submits something in error, we have no way of fixing it.</li>
+        <li>Recent phishing attacks have prompted us to strengthen the campus firewall, restricting further the access of resources from out of campus. This has increased the confidentiality and integrity of our campus resources. But it came at a cost, as students and faculty abroad now have a harder time accessing resources on campus, reducing availability.</li>
+        <li>Using a browser's password manager increases your availability to resources, as you don't have to search for your password every time or remember many passwords. But it also decreases your confidentiality and integrity as anyone who sits on your computer and uses your laptop can now access your various sites, including possibly banking information.</li>
+      </ul>
+    </p>
+    <p>
+    Along with the aforementioned general goals, we must also consider various <term>attack methods</term>, sometimes called <term>attack vectors</term>, as every security approach is meant to protect against specific attacks and attackers. These methods fit broadly into four groups:
+      <ul>
+        <li><term>Interception</term> attacks attempt to access the data without proper authorization. Someone hacking into our email account is an example.</li>
+        <li><term>Interruption</term> attacks prevent our access to the data, temporarily or permanently. Denial-of-service attacks are good example.</li>
+        <li><term>Modification</term> attacks aim to tamper with our assets/data. A hacker changing our bank account's balance would be a good example.</li>
+        <li><term>Fabrication</term> attacks aim to produce manufactured data. A malware sending email from our account is a good example.</li>
+      </ul>
+    </p>
+    <exercise>
+      Suppose that the "data" we want to protect is the contents of a specific piece of paper on the desk in your room. Consider the kinds of possible attacks on that data, based on the aforementioned four groups. Consider various approaches to "securing" this data against these attacks, and their tradeoffs/vulnerabilities regarding the above three concepts.
+    </exercise>
+    <exercise>
+      <p>Before electronic evaluation forms were a thing, we used a system that worked as follows:
+        <ul>
+          <li>The professor received for each class an envelope with a number of forms equal to the number of students enrolled in the class.</li>
+          <li>At some point during the class period, the professor takes out the envelope, takes the forms out of the envelope, gives one form to each of the students present, then asks for a student volunteer to take the completed forms to the admin building.</li>
+          <li>The professor hands to that student the envelope, then leaves the room.</li>
+          <li>Each student fills in their form then places is into the envelope.</li>
+          <li>When everyone has filled in their form, the volunteer student takes the envelope to the admin building, to the office of academic affairs.</li>
+          <li>The secretary there takes the forms, numbers them sequentially (1/15, 2/15 etc) and places them back at the envelope, then places the envelope in a locked cabinet in a nearby room.</li>
+          <li>When a professor wants to review their evaluations they go the secretary who takes them to the room, unlocks the cabinet and takes out that professor's envelopes, then locks it again, and gives them to the professor.</li>
+          <li>The professor is then allowed to sit in that office and review their evaluation forms, and take any notes they would like to. When they are done they return the envelopes to the secretary.</li>
+          <li>When the professor is under evaluation, these forms are also made available in the same way to members of the evaluation committee.</li>
+        </ul>
+        Discuss:
+        <ul>
+          <li>What are the C-I-A considerations of such a system?</li>
+          <li>What would be specific attacks to the system from a student, or from the professor.</li>
+        </ul>
+      </p>
+    </exercise>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-authentication">
+    <title>Identification and Authentication</title>
+  <p>At the core of any security system is the ability to correctly identify and authenticate individuals attempting to access the system. This naturally breaks into two steps.
+  <ul>
+    <li><term>Identification</term> is the claim of what someone or something is. For instance using our debit card in an ATM is an identification, we claim to be the owners of that debit card. Another example would be claiming to be over 21 in a bar. Carrying around our college ID identifies us as individuals connected to the college. Our username at some website identifies us as that person.</li>
+    <li><term>Authentication</term> is the process of establishing that the claimed identification is true. For instance asking for the cardholder to type in the PIN number for the debit card is an authentication. Showing our ID to confirm our age would be another example of authentication.</li>
+  </ul>
+</p>
+<exercise>
+  Think of usages of your college ID around campus. Which of these usages involve authentication? What kind of authentication is it (you as a specific person, you as just a student, you as someone who should have access to certain area)?
+</exercise>
+<exercise>
+  Think of other practical examples of identification and authentication.
+</exercise>
+<exercise>
+  Think of computer-related examples of identification and authentication.
+</exercise>
+
+<p>One topic worthy of discussion is the difference between <em>identity verification</em> and <em>authentication</em>. In general, authentication is more secure. The difference can be seen in a bank giving someone access to their account. Simply presenting an ID to verify your identity would not be sufficient to authenticate you as an account holder. You will likely need to possibly know the account number or have a bank card or key.</p>
+<p>Authentication methods naturally fall into categories, called <term>factors</term>. The standard factors are the following:
+  <ul>
+    <li><term>Something you know</term> For example a password, PIN number, social security number, date of birth etc. By itself this is a somewhat weak form of security, as the moment this information is exposed it is no longer secure.</li>
+    <li><term>Something you are</term> This can consist of a variety of physical attributes, often known as biometrics. It would include your height, weight, eye color, iris/retina patterns, DNA, fingerprints. Some of this information is fairly transient (e.g. height or weight), while other parts like DNA can be fairly secure ways of identifying you. They are also expensive to set up.</li>
+    <li><term>Something you have</term> This consists of the physical or electronic possession of some item or device. ATM cards and ID cards are good examples, as is your mobile phone or your email account when used in that fashion.</li>
+    <li><term>Something you do</term> These are more complex aspects of who you are, for instance your gait, keyboard typing pattern or handwriting. These are difficult to falsify, but often result in false negatives when legitimate users may be incorrectly rejected.</li>
+    <li><term>The place you are at</term> For example certain servers are only accessible by terminals physically in the same room, and some campus electronic resources are only available if you are physically on campus.</li>
+  </ul>
+</p>
+<exercise>
+  Classify the following factors:
+  <ul>
+    <li>Your Hanover password</li>
+    <li>Your face when compared to a photograph</li>
+    <li>A secret handshake</li>
+  </ul>
+</exercise>
+<exercise>
+  How does your phone identify you and lets you access it?
+</exercise>
+  <p>A common practice is the so-called <term>multi-factor authentication</term>, when we are using more than one factor to authenticate. A special case is the so-called two-factor authentication. For instance many online games now require you to download an <q>authenticator</q> to your phone, and when you want to log in to the game you need to both type your password (something you know) and type in the number shown on the authenticator (something you have).</p>
+  <p>Another example of this is using an ATM. You need to both have your debit card (something you have) and type in your PIN (something you know).</p>
+  <exercise>
+    Describe the authentication systems, if any, in place when using a credit card for a purchase, both physically at a store as well as online.
+  </exercise>
+  <exercise>
+    When you use your Hanover ID to pay at the Campus Center, what authentication factor(s) does this use? What other factors can we add to make the process more secure?
+  </exercise>
+  <exercise>
+    When you pick up your campus mail, what authentication factor(s) does this use? What other factors can we add to make the process more secure?
+  </exercise>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-authorization">
+    <title>Authorization</title>
+<p>After identification and authentication have been performed, the next step is authorization, namely providing access to only those assets that the authenticated party is supposed to be able to access. In other words, <term>authorization</term> determines what the authenticated party can and cannot do. These controls can be physical (a guard, gate etc), or logical (electronic lock).</p>
+<p>A key principle when considering authorization is the following:</p>
+<blockquote>
+  <p><term>Principle of least privilege</term></p>
+  <p>We should only allow the bare minimum of access to an authorized party, in order for it to perform the needed functionality.</p>
+</blockquote>
+<p>There are many examples of this principle. For instance the staff working in the registrar's office should not have direct access to your business office information, and conversely someone working in the business office should not be able to sign you up for classes.</p>
+<p>The system that we have in place right now in the college does not follow this principle fully. It would be nice if you could give your parents limited access to the <q>billing</q> part of your account, so they could monitor it and pay and so on, but the only way to really do that right now is to give them your password, which also gives them access to your email, classes, grades etc.</p>
+<p>Another example is a web server. The process that is running the web server should be given access only to the files it needs to do its job, and not the rest of the system. Oftentimes however the process acting as the web server is a superuser of the system. This could allow an intruder to exploit a web vulnerability and execute instructions as a superuser/administrator.</p>
+<p>Most systems implement a separate user account, often called <q>apache</q> in the case of the Apache web server, and all webpages get that user's more limited permissions.</p>
+<p>Many problems on personal computers are caused by the (default) user account also being the administrator account. This means that any application or program downloaded from the internet will be executed with full administrator privileges on the computer, and would thus be capable to do a lot of damage. Therefore it is a common guideline to always create separate <q>user</q> and <q>administrator</q> accounts.</p>
+<paragraphs>
+  <title>Access Control</title>
+<p>Authorization is described most often in terms of <term>access control</term>. Every use case can be described in terms of the following basic operations:
+  <ul>
+    <li><term>Allowing access</term>  The most straightforward example of this is how a key gives you access to a locked room.</li>
+    <li><term>Denying access</term> This should typically be the default. Placing a guard or a lock on a door is a typical example. Often times access is denied based on the time (for example campus buildings are locked after a certain time).</li>
+    <li><term>Limiting access</term>  It is often important to restrict the actions that can be taken. This is often described as running in a <em>sandbox</em> environment. A physical example would be that you may be allowed to access certain files in a room, but you may be forbidden from copying them or taking them out of the room. Another example would be access to a limited set of resources. For instance most faculty on campus have keys to their office building but not to other buildings, while some select personnel have master keys that can open any door on campus.</li>
+    <li><term>Revoking access</term>  The system should be able to revoke the access it has given to someone, e.g. if they get fired. For example, we can change the locks on a door, to revoke access using a specific physical key.</li>
+  </ul>
+  <exercise>
+    Consider the following two approaches to guarding a room. The goal is that only those authorized should be able to access the room.
+    <ul>
+      <li>A guard checks your ID against an access list they have in a clipboard.</li>
+      <li>A guard stands by the door and you must tell them what the password is.</li>
+      <li>People who should have access are given keys they can use to unlock the door.</li>
+      <li>People who should have access are given keycards they can scan in order to unlock the door and must also do a fingerprint scan.</li>
+    </ul>
+    What are the relative merits and vulnerabilities of each system? How does each system authenticate you? How easy is it to circumvent each system for various attack methods?
+  </exercise>
+</p>
+<p>There are fundamentally two ways in which one can provide access control.
+  <ul>
+    <li>
+      <p><term>Access Control Lists</term>  These are very common in many systems, from filesystems to web services. These list for any resource the identifiers of the parties that are allowed to access the resource, and what tasks they are allowed to perform. For instance you may protect a file against writing, and only allow it to be read. Also we would prevent users from being able to access each other's files.</p>
+      <p>Another example of ACLs is the firewall that we use at the college, which blocks access to many resources from out of campus, while allowing emails or web requests through. In this instance the <q>identifier</q> is the specific IP address of the incoming request and <q>port</q> that it comes at. Email and web requests use specific ports, so the firewall blocks all other ports.</p>
+    </li>
+    <li>
+      <p><term>Capabilities</term>  These are less common, and their goal is to provide access based on a <em>token</em> rather than an identification of the individual. The holder of the token is given access, and thus for example a user can obtain a token for a specific action, then give that token to someone else. That other party can then use the token to obtain access to the resource. A good example of this is our college card system. If you give someone your card, then they can use it to for instance open a door, make photocopies, etc. But their access is mostly limited to those actions that the card enables. They still can't check your email for example, as they do not have your password.</p>
+      <p>Another example of this would be a prescription for a medicine. Anyone can pick up the medicine as long as they have the filled out prescription (and possibly an ID).</p>
+    </li>
+  </ul>
+  <exercise>
+  Think of other authorization situations from your experience, and describe them according to the aforementioned groups.
+  </exercise>
+  <exercise>
+    Classify the following authorization approaches:
+    <ul>
+      <li>A VIP list and area at a club</li>
+      <li>Access to your registrar office information at myhanover</li>
+      <li>Using a movie ticket to enter a movie at the theater</li>
+      <li>Using your access token to the TMDB database</li>
+      <li>Using an electronic discount code</li>
+    </ul>
+  </exercise>
+</p>
+</paragraphs>
+  </subsubsection>
+</subsection>

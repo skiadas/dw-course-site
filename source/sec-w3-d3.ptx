@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-3-day-3" xmlns:xi="http://www.w3.org/2001/XInclude">
+    <title>Wednesday</title>
+    <introduction>
+    <p>
+      <ul>
+        <li>Security: Generals, C-I-A, Authorization vs Authentication</li>
+        <li>Practical Cryptography</li>
+      </ul>
+    </p>
+    </introduction>
+    <xi:include href="sub-w3-d3-security.ptx" />
+    <xi:include href="sub-w3-d3-cryptography.ptx" />
+    <xi:include href="sub-w3-d3-web-authentication.ptx" />
+</section>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-cryptography">
+  <title>Cryptographic Tools</title>
+  <subsubsection xml:id="subsubsec-cryptography-in-general">
+    <title>Cryptography in General</title>
+  <p>When it comes to electronic security, Cryptography has given us a powerful set of tools. We will very briefly discuss some of these tools in this section. The full topic would go far beyond the scope of the course.</p>
+  <p>Let us clarify some terms used in a cryptographic system
+    <ul>
+      <li><term>message</term> A piece of information that needs to be communicated (securely) between two parties.</li>
+      <li><term>ciphertext</term> An encrypted version of the message.</li>
+      <li><term>(secret) key</term> A piece of information that in combination with the message produces the ciphertext</li>
+      <li><term>cipher</term> The specific algorithm describing how the message and the key are to be combined to produce the ciphertext.</li>
+      <li><term>sender</term> The sender wants to send a message. They instead compute the ciphertext, a process called <term>encryption</term>, and send that.</li>
+      <li><term>receiver</term> The receiver receives the ciphertext, and reverses the process to obtain the message. This is called <term>decryption</term>.</li>
+      <li><term>attacker</term> The attacker attempts to determine the message based on the ciphertext. In various settings the attacker has varying capabilities, including asking the sender to encode various messages or trying to send various texts to the receiver and seeing what the receiver does with them.</li>
+    </ul>
+  </p>
+  <p>A fundamental tenet of modern cryptographic systems is that everything else about the process is known to an attacker, except for the message and the secret key. The attacker gets to see the ciphertext and also has full knowledge of how the message and the secret key were processed to obtain that ciphertext. The attacker then wants to learn the message or the key, and if the system is secure then they should not be able to do so. The converse approach, trying to secure something by hiding the details, is called <q>security through obscurity</q>, and is considered a bad and brittle approach.</p>
+  <p>The remarkable fact is that mathematics provides us with the means of producing these secure ciphers. Even though an attacker knows perfectly well what the ciphertext is and how it was obtained, they have no way at all to determine the message and key that gave rise to the ciphertext.</p>
+  <p>
+    Let's consider a simple example called the Caesar cipher: It works on the letters of the alphabet, and shifts every letter over by a specific amount. For example:
+    <ul>
+      <li>Message: AWESOME</li>
+      <li>key: 3 (shifting by 3 cyclically)</li>
+      <li>Ciphertext: DZHVRPH</li>
+    </ul>
+    To decode the ciphertext as an attacker, and if you know it is a Caesar cipher, all you need to do is try out all possible shift amounts (only 26 of them), until you see a message that makes sense. If the text is much longer you can even expedite the process by considering how frequently each letter shows up, and comparing that frequency to the frequency of letters in text from the used language.
+  </p>
+  <exercise>
+    Here is a ciphertext I created using a Caesar cipher: <c>PBPOXCVYDQ</c>. Write a Python program that tries out different keys, and find the secret message.
+  </exercise>
+  <p>
+    The fundamental problem with the Caesar cipher is that the keys have <term>small entropy</term>: We can easily loop through all possibilities and check which one works.
+  </p>
+  <exercise>
+    Phone passcodes and PIN numbers are often four digits. If someone can try one every half a second, how long would it take for them to access your phone, in the worst case?
+  </exercise>
+  <paragraphs>
+    <title>Symmetric Key Ciphers</title>
+<p>There are various kinds of ciphers. A first fundamental example is that of <term>symmetric key ciphers</term>, also known as <em>private key</em> ciphers. In this situation, there is a <em>common key</em> between the sender and the receiver, somehow agreed upon in advance. This same key is then used for both encryption and decryption. The Caesar cipher is a simple example of this.</p>
+<p>These ciphers come in two flavors. The <term>stream ciphers</term> operate on one bit of the message at a time (like Caesar). The <term>block ciphers</term> on the other hand operate on blocks of bits, typically 64 bit, as a group. Most symmetric key ciphers in use nowadays are block ciphers.</p>
+<p>Popular examples of symmetric key ciphers are DES, AES, RC5 and Blowfish.</p>
+<p>
+  The fundamental problem of symmetric key ciphers is that the two parties must share a common secret key. And establishing that key in the first place is hard when someone is listening in to the entire conversation.
+</p>
+  </paragraphs>
+  <paragraphs>
+    <title>Asymmetric key Ciphers</title>
+<p>The <term>asymmetric key ciphers</term> differ from symmetric key ciphers in that they use two different keys. The sender is given a <term>public key</term> which they use to encrypt the message, while the receiver has a <term>private key</term> that they use to decrypt the ciphertext.</p>
+<p>The advantage of these ciphers is that they do not need for the parties to have had any prior <q>conversation</q> (in the symmetric key case the two parties must already share a secret key). The sender simply asks the receiver for their public key, and uses it to send the message.</p>
+<p>Asymmetric ciphers are often used during the <q>handshake</q> portion of a client-server interaction, to establish a common secret key that the two parties can use for further information exchange via a symmetric cipher. For instance the first time your computer (the client) tries to connect to your bank's web server, they might initiate such an exchange. It might go something like that:
+  <ol>
+    <li>The client asks the server for their public key.</li>
+    <li>The server sends the public key back.</li>
+    <li>The client then creates a message M that consists of say 256 random bits.</li>
+    <li>The client uses the public key to encrypt that message and sends it over to the server.</li>
+    <li>The server uses their private key to decrypt the ciphertext and also learn the message M.</li>
+    <li>Now both client and server share this secret message M. They can now use it as the secret key for a symmetric cipher, to continue the rest of their conversation.</li>
+  </ol>
+</p>
+<p>The reason you may want to do that is that asymmetric ciphers are a lot slower than symmetric ciphers.</p>
+<p>Asymmetric ciphers often rely on deep mathematical conjectures. For instance the RSA cipher relies on our belief that for two very large prime numbers, if we are only given their product then we cannot recover the numbers.</p>
+<p>Some popular asymmetric ciphers are the RSA, which is used to implement the SSL protocol used for all secure web exchanges (e.g. HTTPS), ElGamal and Diffie-Hellman.</p>
+<p>This system relies on a level of trust when the server sends its public key to the rest of the world. <em>Certificates</em> are used to keep this kind of information somewhat protected. But this is a more complicated topic.</p>
+<p>It's worth pointing out that in the past many of these algorithms were considered state secrets. For instance a popular cipher called PGP was on its release considered a <em>munition</em>, and its creator who shared it openly with the world spent considerable time being accused of arms trafficking violations.</p>
+  </paragraphs>
+  <paragraphs>
+    <title>Cryptographic Hash functions</title>
+<p><term>Cryptographic Hash functions</term> are another tool in our arsenal. They are <term>key-less</term>, in the sense that they do not employ a secret key, and are <term>one-way</term>, in the sense we will describe in a moment.</p>
+<p>A cryptographic hash function (briefly a hash function) turns a message into a much shorter <term>message digest</term> or <term>hash</term>. The resulting hash has a number of useful properties:
+  <ul>
+    <li>It is extremely unlikely for two messages to produce the same hash. The hash can therefore act as a verification for the validity of the message.</li>
+    <li>Even small changes in the original message result in vastly different hashes.</li>
+    <li>It is infeasible to recover any part of the message from the hash.</li>
+    <li>Given a hash, it is infeasible to produce a message that would result in that hash.</li>
+  </ul>
+</p>
+<p>NOTE: Hash functions are also used to construct hash tables and dictionaries in many programming languages. These functions do NOT have all the good properties described above.</p>
+<p>Some popular hash functions are MD5, SHA2 and SHA3.</p>
+<p>MD5 in particular is extensively used to validate file downloads. Though it is slowly supplanted by SHA in recent instances. A company that has released a file/executable may provide you with multiple mirrors/locations from which you can download it. But to prevent the possibility that someone might change that executable and corrupt your system they also provide you with the MD5 hash for the executable. You can then run this hash on the downloaded file before executing it, to make sure it matches what the company gave you.</p>
+  <exercise>
+    Pick one of your Python files and compute its SHA256 hash by doing: <c>sha256sum filenameHere</c> You should receive as a response a long string, which is the hash. Then add a single newline character to the file and compute the sha again, and see how the new sha is completely different from before.
+  </exercise>
+  </paragraphs>
+  <paragraphs>
+    <title>Digital Signatures</title>
+<p>Hash functions along with asymmetric key encryptions can be used to <q>digitally sign</q> a document. The server is here the one who wants to send a signed document to the client. The goal is the following:
+  <ul>
+    <li>The server wants to send a document to a client. They want to send along with it anything needed to verify the integrity of the provided document, as well as the validity of them as the sender.</li>
+    <li>They want to ensure that if someone tampers with the file, the client will be able to detect it.</li>
+    <li>They want to be able to convince the client that they are the ones who generated the signature.</li>
+  </ul>
+  The steps are as follows, and their order is very important:
+  <ol>
+    <li>The server computes a hash of the document they want to send.</li>
+    <li>The server has a (private key, public key) pair created, and uses their private key to encrypt the hash, then appends the encrypted hash to the document. (Note this is a bit opposite to how private keys are usually used, they are usually used to decrypt, not to encrypt).</li>
+    <li>The server then sends that document to the client.</li>
+    <li>The client takes apart the portion of the document that is the encrypted hash.</li>
+    <li>The client uses the public key of the server to decrypt that encrypted hash, and therefore recover the hash that the server had computed.</li>
+    <li>The client separately computes the hash of the document that the server sent, as they have the document.</li>
+    <li>If the two hashes don't match, that means that someone tampered with the document in transit.</li>
+  </ol>
+</p>
+  <exercise>
+    What would happen if we skip the encryption phase? Can the server simply send the document along with the hash? What can go wrong?
+  </exercise>
+<p>Digital Signatures thus assure the integrity of the message. But they do allow the message to be visible to whoever sees what is going on. If confidentiality is also needed, then we can add a symmetric encryption phase to ensure that as well, though it is important to get the details right and we will not discuss this further here.</p>
+  </paragraphs>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-digital-certificates">
+    <title>Digital Certificates</title>
+<p><term>Digital Certificates</term> can be used to link a public key to a particular individual or company. Therefore when we need to obtain someone's key, we instead obtain their certificate instead of directly asking them. This prevents so-called man-in-the-middle attacks (where someone is listening in and tampering with the communication, and they give you their own public key instead).</p>
+<p>Digital Certificates are issued by a <term>Certificate Authority (CA)</term>, which is a trusted party that digitally signs the certificates using their key. This way we only need to trust the certificate authority, rather than trust each individual or company to give us their true public keys. VeriSign is one such widely used CA.</p>
+<p>There is a larger infrastructure that makes working with public keys effective. It is called a <term>Public Key Infrastructure</term> (PKI). We will not discuss it.</p>
+  </subsubsection>
+</subsection>

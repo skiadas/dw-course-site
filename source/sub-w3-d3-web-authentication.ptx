@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-authentication-onweb">
+  <title>Authentication on the web</title>
+  <p>
+    There are fundamentally two ways that webservers can use to authenticate folks:
+    <ul>
+      <li><term>Local Authentication</term>, where the application itself is responsible for managing and authenticating users, most commonly a username-password combination</li>
+      <li><term>Federated Authentication</term>, where the authentication is delegated to/handled by a trusted third party</li>
+    </ul>
+    Let's examine these in more detail.
+  </p>
+  <subsubsection xml:id="subsubsec-local-authentication">
+    <title>Local Authentication: Stored credentials</title>
+<p>Typically a username-password systems consists of the following:
+  <ol>
+    <li>Users are able to register for accounts by providing a username and password (and often an email address for verification and password recovery).</li>
+    <li>To access the site, users provide their username and password, usually by filling out a form. These credentials are compared with the stored credentials, and access is granted or revoked.</li>
+    <li>A <term>session</term> is created when users successfully log in. This session is somehow maintained so users don't have to provide their password on every single page.</li>
+    <li>Users have the option to log out of that session at any time.</li>
+    <li>Sessions typically time out after a while.</li>
+  </ol>
+</p>
+<p>We will discuss how such a system can be implemented, and various gotchas along the way. Here are some things to watch out for:
+  <ol>
+    <li>If someone is monitoring the HTTP traffic, they should not be able to see the user's password.</li>
+    <li>Ideally, someone hacking the servers and gaining access to the database should not be able to see the users' passwords.</li>
+    <li>Session IDs should not contain any sensitive information about the session, and the user should not be able to manipulate them.</li>
+    <li>An attacker should not be able to obtain a user's session ID and access that user's information.</li>
+  </ol>
+  There are three parts to achieving this: secure communication, stored credential management, and session management.
+</p>
+  <paragraphs>
+    <title>Secure communication with HTTPS</title>
+<p>One first key tool is the use of HTTPS instead of HTTP. This adds a number of steps in the process:
+  <ol>
+    <li>A <q>secure transport</q> system is used, either SSL or TLS, to ensure the confidentiality and integrity of all the information sent back and forth between client and server. This ensures that anyone monitoring the HTTP traffic does not get to see any of the actual content, except more or less for the client and server addresses. You should never have any password submission page that is not HTTPS.</li>
+    <li>In order for that system to work, at least one of the sides must be using a digital certificate. This is often the server, so HTTPS protocols require a little bit more setup on the server side.</li>
+    <li>An asymmetric encryption system is used to establish a common secret key, and a symmetric encryption system based on that secret key is then used for all subsequent communications between client and server. This is all negotiated during what is known as the <term>handshake</term> phase. It is typically handled automatically by whatever program you use, but often needs to be set up in some way.</li>
+  </ol>
+</p>
+<p>While in some instances HTTPS is used only for the login page, it is preferable to instead use it throughout the site to better protect the session information. In fact these days it is rare to find a website that doesn't force HTTPS.</p>
+  </paragraphs>
+  <paragraphs>
+    <title>Password management</title>
+  <p>Another key component is how passwords are being managed. You need to somehow be able to verify when someone attempts to log in, that they have the correct username and password.
+  <ol>
+    <li>While we could simply store passwords in a database, this is not advisable. Any vulnerability to the database can expose the user's passwords to an attacker.</li>
+    <li>Instead, we store <em>hashes</em> of the passwords using an algorithm like md5. When a user attempts to log in and send us their password, we then compute its hash and compare it to the stored value.</li>
+    <li>As hashing is one-way, the database never stores a user's password. This is why whenever you report that you have forgotten your password, a new one is generated instead of telling you your password; because the server literally does not know your password.</li>
+    <li><p>As most people's passwords tend to have small <q>entropy</q> (i.e. the number of different possibilities is not all that big), they are often subject to what what is called <term>dictionary attacks</term> or <term>rainbow table attacks</term>: The attacker has generated a long list of all common passwords, and computed all their hashes. They then hack the database and look through the hashes there. If they find one that matches an entry in their list, then they have learned that person's password.</p>
+      <p> To combat this, we often use what is known as a salt. The <term>salt</term> is a randomly generated sequence of fixed length (say 20 bytes) that we append to the password before hashing. We generate the salt when the user first creates their account, and we store it in the database alongside the username and hashed password. When the user tries to log in later, we recover the salt from the database, combine it with the password the user provided, compute the hash and compare it to the stored hash.</p>
+      <p>This adds a bit of randomness to each account. Even if two users have the exact same password, they will have different salts and therefore will produce different hashes.</p>
+    </li>
+  </ol>
+  <exercise>
+    It took my computer 7.2 seconds to compute the hashes for 11316496 different passwords. That's almost 1.6 million different hashes per second. Modern passwords ask to be at least 8 characters long and those characters can be numbers, lowercase or uppercase letters, or special symbols. That's a total of about 80 different characters you can use. How many different 8-character-long passwords are there using these 80 possible characters? How long would it take for my computer to compute all the hashes? What if I could distribute the computation amongst 100 computers? What if it was only 6-character-long? What if it only used the alphabet (lowercase+uppercase)?
+  </exercise>
+</p>
+  </paragraphs>
+  <paragraphs>
+    <title>Session Management</title>
+<p>Sessions aim to maintain user information across multiple HTTP(S) requests. This is what allows us to not have to log on every single page of a site. In order to achieve that, sessions are created.
+  <ol>
+    <li>When a user first logs in, a session is created. We can think of the session as a dictionary of useful and relevant information that should be available to the web page as the user navigates the site. It may include their username, role, expiration time of the session, temporary <q>shopping cart</q> type information etc.</li>
+    <li>A random session ID is generated. That ID is then to be used as the session identity. We store it in a database, alongside the actual data that comprise that session.</li>
+    <li>We effectively send the session ID back to the user, and when the user moves to the <q>next page</q>, that ID is sent back to the server so that the server knows what the state of the system is.</li>
+    <li>This random ID is preferable to storing the various session information on the client side. That approach would potentially make it easier for the user to <q>change</q> that information to serve their purposes. But it has the downside that we must maintain a database of active sessions. (This can however be done on an in-memory database like Redis)</li>
+    <li>In order to prevent a user from trying to type in a session ID and potentially use another user's settings, the server <term>digitally signs</term> the session ID. Recall that this entails computing the ID's hash, then encrypting that hash with the server's private key and appending it to the ID before sending the ID back to the client. The server would then only accept IDs that are accompanied by this extra hash bit, which the server can decrypt and compare to the session ID's hash to make sure noone tried to change the hash.</li>
+    <li>Typically <term>cookies</term> are used to communicate the session ID information back and forth. It is important that the cookies are set up as <term>secure</term> and <term>httpOnly</term>. This ensures that the browser only sends the session information over an HTTP<term>S</term> connection, and also does not expose the cookie to the Javascript code running on the page.</li>
+  </ol>
+</p>
+  </paragraphs>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-federated-authentication">
+    <title>Federated Authentication: OAuth2</title>
+    <p>
+      As you can imagine all the above requires a lot of work, has many security risks, and requires that the users maintain many different usernames and passwords. An alternative approach is to delegate your authentication to a third party. A common way to achieve this is with a protocol called <term>Open Authorization 2.0</term>, or <term>OAuth2</term> for short. At a high level this goes something like that:
+      <ol>
+        <li>There are <term>authorization servers</term> that run the OAuth2 protocol. These are often run by social networking sites, GitHub, Microsoft etc. In other words sites that your app's users are likely to already have accounts (or maybe you create accounts for them, our Hanover accounts are really just Microsoft accounts).</li>
+        <li>The app has talked to the authorization server and has acquired a "client id". This is the id of the app as a client of the authorization server, and it essentially allows the app to use this authorization server.</li>
+        <li>When a user visits the app, they are redirected to the authorization server's login site. That redirected request includes details about the client-id (i.e. the app name), what kinds of resources it is trying to access (e.g. just profile), a "state string" to remember where the request came from, and finally a "redirect URL" back to the app.</li>
+        <li>The user then authenticates themselves normally on the authorization server (e.g. in our case we get the Microsoft login screen, possibly an authenticator notice on our phones).</li>
+        <li>. If the login is successful, the authorization server uses the redirect URL to send the user back to the app, including in that request the state, as well as a special authorization code.</li>
+        <li>The app then uses this authorization code to contact the authorization server and get basic access tokens and other allowed info about the user.</li>
+        <li>It then uses those tokens to maintain access for this user.</li>
+      </ol>
+      We could use this approach for just authentication, or we could use it for more. For example you can authorize various web applications to be allowed access to a GitHub repository of yours and to perform operations there on your behalf.
+    </p>
+    <p>
+      OAuth2 is a big topic that unfortunately we don't have time to explore further.
+    </p>
+  </subsubsection>
+</subsection>
