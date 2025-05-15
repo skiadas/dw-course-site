@@ -53,12 +53,12 @@
       <p>This adds a bit of randomness to each account. Even if two users have the exact same password, they will have different salts and therefore will produce different hashes.</p>
     </li>
   </ol>
+</p>
   <exercise>
     <p>
       It took my computer 7.2 seconds to compute the hashes for 11316496 different passwords. That's almost 1.6 million different hashes per second. Modern passwords ask to be at least 8 characters long and those characters can be numbers, lowercase or uppercase letters, or special symbols. That's a total of about 80 different characters you can use. How many different 8-character-long passwords are there using these 80 possible characters? How long would it take for my computer to compute all the hashes? What if I could distribute the computation amongst 100 computers? What if it was only 6-character-long? What if it only used the alphabet (lowercase+uppercase)?
     </p>
   </exercise>
-</p>
   </paragraphs>
   <paragraphs>
     <title>Session Management</title>
