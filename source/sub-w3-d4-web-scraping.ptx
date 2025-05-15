@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-web-scraping">
+  <title>Web Scraping</title>
+  <subsubsection xml:id="subsubsec-web-scraping-generals">
+    <title>Web Scraping Generals</title>
+  <p><term>Web Scraping</term> is the process of extracting data from web pages. This consists of a number of activities:
+    <ul>
+      <li>Programmatically access a web page's content.</li>
+      <li>Optionally, submit query data by programmatically filling out a form.</li>
+      <li>Programmatically detect and follow links on the web page.</li>
+      <li>Parse and process a page's HTML content and extract key information.</li>
+    </ul>
+  </p>
+  <p>This would typically involve two libraries:
+    <ul>
+      <li>A library to make HTTP requests, like <c>httpx</c>.</li>
+      <li>A library to parse and process web-pages. We will use Python's <url href="https://www.crummy.com/software/BeautifulSoup/"><c>BeautifulSoup</c> library</url>.</li>
+      <li>If the data is dynamically generated via Javascript, we also need a <em>headless browser</em> library like <url href="https://playwright.dev/python/docs/library">Playwright</url> to basically follow the same process that a real browser uses. We will look at these towards the end of the section</li>
+    </ul>
+  </p>
+  </subsubsection>
+  <subsubsection xml:id="sub-web-scraping-vs-apis">
+    <title>Web Scraping vs APIs</title>
+    <p>Web Scraping differs from calling on APIs and Web Services. These APIs are designed to be <em>read by programs</em>, rather than humans. They require a considerable investment on the part of the server, and therefore not all websites with useful information expose that information via an API.</p>
+    <p>On the other hand, web-scraping processes the same web-page that humans see on a browser, with the only difference that it can read more of the underlying structure of the page, rather than just the visible text. But in essence, web-scraping requires that we program the computer to read information that was designed to be read by humans. This is a somewhat more challenging and error-prone endeavor on our end, but it can also be applied to more situations, as there are many more web pages out there than there are web services.</p>
+    <p><em>If you can view it in your browser, you can access it via a Python script</em>.</p>
+    <p>In short:
+      <ul>
+        <li><term>Web APIs</term>: Not human-readable. Optimized for programmatic consumption. Not all sites offer them. Some times expose only limited functionality.</li>
+        <li><term>Web Pages</term> Human-readable. Optimized for human consumption. Much more prevalent.</li>
+      </ul>
+      If something is available via an API you should always prefer that way of accessing it.
+    </p>
+</subsubsection>
+<subsubsection xml:id="sub-basic-web-scraping">
+  <title>Basic Web-Scraping</title>
+  <p>The basic structure of a web-scraping script would be something like this:</p>
+  <program language="python">
+import httpx
+import bs4     # Beautiful Soup
+
+http_response = httpx.get(... web page address ...)
+
+# Possibly consider http_response.status_code to see
+# if the page could not be found
+# Possibly redirect to another page
+
+page_content = bs4.BeautifulSoup(http_response.text)
+
+# Now Web-scrape!
+# Navigate the page_content object
+# Extract the desired information
+# Print or save results
+</program>
+<p>As a start example, we will extract information about the world's mountains from the wikipedia page linking all mountains.</p>
+<program language="python">
+import httpx
+from bs4 import BeautifulSoup
+
+base_site = "https://en.wikipedia.org"
+mountains_list_age = "/wiki/List_of_mountains_by_elevation"
+http_response = httpx.get(base_site + mountains_list_age)
+bsObj = BeautifulSoup(http_response.text, "html.parser")
+print(bsObj.prettify())
+</program>
+<p>This <c>bsObj</c> represents the entire HTML document, and what you see from the last command is a printout of that HTML document. You can also use your browser's developer tools to see a page.</p>
+<p>In general what you see is:
+  <ul>
+    <li>There is a nested structure in terms of <q>tags</q>, like <c>&lt;html&gt;</c>, <c>&lt;body&gt;</c> etc</li>
+    <li>each opening tag matches with a corresponding closing tag <c>&lt;/html&gt;</c>.</li>
+    <li>A tag may contain other tags within it, but the nesting structure has to be <em>well formed</em>: A tag that opens within another tag must also close within that same tag: We can't have <c>start-a / start-b / end-a / end-b</c></li>
+    <li>Each tag may have key-value <em>attributes</em> that provide extra information, and it also has <em>content</em>.</li>
+  </ul>
+</p>
+<p>The <term>BeautifulSoup</term> library offers access to this structure in two ways:
+  <ul>
+    <li>You can navigate from a tag to its children.</li>
+    <li>You can look for all tags with specific properties (e.g. all <q>link tags</q>, the tag with a specific id, etc), either at the whole document or within a specific tag.</li>
+  </ul>
+</p>
+<p>For instance we can reach the <c>title</c> tag from the top object by navigating its parent chain:</p>
+<program language="python">
+bsObj.html.head.title
+</program>
+<p>In this case, given there is only one title tag around, we could also do:</p>
+<program language="python">
+bsObj.title
+</program>
+<p>The main document contents is all within the <c>&lt;body&rt;</c> tag within the <c>&lt;html&rt;</c> tag.</p>
+<p>Notice that what you get back is not just the text, but a <term>tag object</term>:</p>
+<program language="python">
+type(bsObj.title)
+</program>
+<p>Tag objects in BeautifulSoup provide many functionalities. They all have a <q>name</q> property that speaks to the kind of tag we have:</p>
+<program language="python">
+bsObj.title.name
+</program>
+<p>We can also get a look at the attributes, if any:</p>
+<program language="python">
+bsObj.body.div
+bsObj.body.div.attrs
+bsObj.body.div['class']
+bsObj.body.div.get('class')     ## Safer, returns None if attribute is not there
+</program>
+<p>We can also access its children, i.e. the contained tags. This is an enumerable structure, and we can iterate over it.</p>
+<program language="python">
+for tag in bsObj.body.children:
+  print(tag.name)
+  if tag.name is not None:
+    print(tag.attrs)
+</program>
+<p>Or we can use a list comprehension and turn it into an actual list or do something else:</p>
+<program language="python">
+elems = [
+  tag for tag in bsObj.body.children
+]
+</program>
+<p>Note all the extra <q>newline</q> tags. They also count as children. We should try to take them out. These represent the text entries within the document, and they can be detected by the fact that they don't have a name:</p>
+<program language="python">
+elems = [
+  tag
+  for tag in bsObj.body.children
+  if tag.name is not None
+]
+</program>
+<p>Based on these tools we can now do more complex operations. For instance notice the <q>a</q> tag inside the div tags above. It has an <q>href</q> field. We can use it to read the <q>links</q>. That's what <c>&lt;a&rt;</c> tags are, links to other pages.</p>
+<program language="python">
+[
+  tag.a.get("href")
+  for tag in bsObj.body.children
+  if tag.name is not None
+  if tag.a is not None
+]
+</program>
+<p>We can also try to directly grab all <q>a</q> links, via the <c>findAll</c> method. This might actually give us more links, as the above method clearly gave us very few links (it only looked at immediate children, not deeper descendants).</p>
+<program language="python">
+[
+  tag.get('href')
+  for tag in bsObj.find_all('a')
+]
+</program>
+<p>We now need to narrow that list down to the elements we want. Typically this requires:
+  <ul>
+    <li>Looking through the tree structure on the browser, and identifying the elements we want to access.</li>
+    <li>Identifying some unique property that all those elements share.</li>
+    <li>Writing code to pick out the elements with that property.</li>
+  </ul>
+</p>
+  <p>For example, we can see that all the entries we are after are inside tables. We could start by targeting those tables, and more specifically the <c>tbody</c> elements that hold the non-header rows of those tables.</p>
+  <program language="python">
+rows = [
+  row
+  for tbody in bsObj.find_all('tbody')
+  for row in tbody.find_all('tr')
+]
+len(rows)
+</program>
+<p>Woah that's a lot of rows! Let us examine one of these rows:</p>
+<program language="python">
+row0 = rows[0]
+</program>
+<p>Hm that is interesting. Remember that we show a <c>thead</c> element in the browser, and that element contained that heading? It appears that in the page we received, the headings are actually in the <c>tbody</c>: Some times Javascript that runs on the page will change the document structure. Looking at the browser is not always 100% accurate.</p>
+<program language="python">
+bsObj.find_all('thead')    # There aren't any!
+</program>
+<p>So what this means is that we must somehow skip the header rows. The only way to really detect them is by checking one of the values. Notice that they have the <c>th</c> tag in them, while normal table cells have the <c>td</c> tag in them. So we can try to detect that:</p>
+<program language="python">
+rows = [
+  row
+  for tbody in bsObj.find_all('tbody')
+  for row in tbody.find_all('tr')
+  if row.th is None
+]
+len(rows)
+</program>
+<p>This is interesting. We had exactly 9 fewer entries, which matches with the 9 divisions of mountains based on height.</p>
+<p>Now let us consider the first row now:</p>
+<program language="python">
+row0 = rows[0]
+print(row0)
+</program>
+<p>Let's say we want to record the following information for each mountain: Its name, the link to its webpage, its elevation in meters, and which mountain range it is a part of. We'll create a little dictionary from each entry. Our method would be as follows:
+  <ul>
+    <li>Figure out how to create the dictionary based on one row.</li>
+    <li>Turn it into a function and apply it to the entire list via a list comprehension.</li>
+    <li>See where it all failed, improve, keep going.</li>
+  </ul>
+</p>
+<p>Let's get started! Here is the various information, which we discovered one at a time with some trial and error:</p>
+<program language="python">
+{
+  "name": row0.a.text,
+  "link": row0.a.get("href"),
+  "height": row0.find_all("td")[1].text,
+  "range": row0.find_all("td")[3].text
+}
+</program>
+<p>Hm notice the weird <c>\xa0</c> symbols. These are invisible whitespace characters. We can take them away via a regular expression match:</p>
+<program language="python">
+import re
+whitespace = re.compile("\xa0+")
+whitespace.sub("", row0.find_all("td")[3].text)
+
+{
+  "name": row0.a.text,
+  "link": row0.a.get("href"),
+  "height": row0.find_all("td")[1].text,
+  "range": whitespace.sub("", row0.find_all("td")[3].text)
+}
+</program>
+<p>Now that we have something working, we'll try it out on the full list:</p>
+<program language="python">
+mountains = [
+  {
+    "name": row.a.text,
+    "link": row.a.get("href"),
+    "height": row.find_all("td")[1].text,
+    "range": whitespace.sub("", row.find_all("td")[3].text)
+  }
+  for row in rows
+]
+</program>
+<p>Many years ago the above command failed right after the <q>Santa Fe Baldy</q> mountain entry. If we search for it we find a <q>Mount Baldwin</q> entry following it. That entry used to not have a link to it some time ago, and the <c>row.a.text</c> part failed. That's no longer the problem, but it is a good lesson: web pages have a lot of quirkiness, and scraping work often has to watch out for edge cases, and may break when the webpage designers change something. </p>
+<p>To improve the performance, we would consider making a function that takes a row as input and returns this dictionary:</p>
+<program language="python">
+def row_to_dict(row):
+  anchor = row.a
+  tds = row.find_all("td")
+  return {
+    "name": row.td.get_text(),
+    "link": None if row.a is None else row.a.get("href"),
+    "height": tds[1].text,
+    "range": whitespace.sub("", tds[3].text)
+  }
+
+mountains = [
+  row_to_dict(row)
+  for row in rows
+]
+</program>
+<p>The above is a bit more robust. Well done! You've completed your first web scraping. We could now continue to do more with each mountain. For example we could follow the links to each mountain's page, and search for an image of the mountain there, and include that link.</p>
+</subsubsection>
+<subsubsection xml:id="sub-following-links">
+  <title>Following links</title>
+  <p>Following links simply requires making a new request. For instance let's take a look at the first mountain, use its link to download its full page, then look at all the image tags on that page:</p>
+  <program language="python">
+m1 = mountains[0]
+http_response1 = requests.get(base_site + m1['link'])
+mObj1 = BeautifulSoup(http_response1.content, "html.parser")
+images = mObj1.find_all('img')
+pprint(images)
+</program>
+<p>Woah there are 104 images on that page. We need to somehow only pick one. We would like this to be the one on the section on the top right.</p>
+<p>It looks like the right side always contains a <c>table</c> element with classes <c>infobox</c> and <c>vcard</c>. There are many of these, but the first one is probably the one we want. We could try to target that table element, then grab the first image tag within it:</p>
+<program language="python">
+sidebar = mObj1.find('table', class_="infobox")
+sidebar.find('img')
+</program>
+<p>Now we'll write a little function that does this: for a dictionary entry for a mountain, it follows the link to the mountain's main page, if there is one, grabs this image tag, then extracts the <c>src</c> link from it.</p>
+<program language="python">
+def update_image_link(mountain):
+  if mountain["link"] is None:
+    mountain["image_link"] = None
+  else:
+    http_response = httpx.get(base_site + mountain["link"])
+    mObj = BeautifulSoup(http_response.text, "html.parser")
+    sidebar = mObj.find('table', class_="infobox")
+    img = sidebar.find('img')
+    mountain["image_link"] = img.get("src")
+
+for mountain in mountains:
+  print(mountain["name"])
+  update_image_link(mountain)
+</program>
+<p>We added the printout to see the process as it goes. This script will take a while to run as it has to access over 1400 different webpages.</p>
+<p>And we see it got stuck on <c>Kampire Dior</c> (10 years ago it got stuck on Batura IV, which doesn't show up any more for some reason). Looking at that mountain's page we see that the image is missing. We can easily fix this by adding a check:</p>
+<program language="python">
+def update_image_link(mountain):
+  if mountain["link"] is None:
+    mountain["image_link"] = None
+  else:
+    http_response = httpx.get(base_site + mountain["link"])
+    mObj = BeautifulSoup(http_response.text, "html.parser")
+    sidebar = mObj.find('table', class_="infobox")
+    img = sidebar.find('img')
+    if img is not None:
+        mountain["image_link"] = img.get("src")
+    else:
+        mountain["image_link"] = None
+</program>
+<p>
+  Unfortunately we have another problem. Note that the link is <c>https://de.wikipedia.org/wiki/Kampire_Dior</c>, which is the german version of the wikipedia. This mountain range doesn't exist on the english version. While it is a fascinating question why that might be the case, why did it cause us problems? Because when we formed the link to follow, we added the <c>base_site</c> link. And that basically produced a mangled link. To see why, change our printing loop to print the links instead:
+</p>
+<program language="python">
+for mountain in mountains:
+  print(mountain["name"], mountain["link"])
+</program>
+<p>
+  You will notice that most links are "relative", starting with something like a slash, but not the full <c>http://....</c> stuff. There are however a few exceptions:
+  <ul>
+    <li>Two mountain ranges have links that start with https, like <c>https://de.wikipedia.org/wiki/Kampire_Dior</c></li>
+    <li>A few mountains, like Penas del Chache or Agujas Grandes, are still a relative link, but it is different, a index.php page. This is basically an error page, saying that this mountain range doesn't have an entry yet. It is meant to link to the creation page, to make it easy for someone to create an entry.</li>
+  </ul>
+  So we need to special-case these situations and handle them accordingly. We can fix the first problem with a better construction of the link:
+</p>
+<program language="python">
+  else:
+    link =  mountain["link"]
+    if not link.startswith("https"):
+       link = base_site + link
+    http_response = httpx.get(link)
+</program>
+<p>
+  For the other case we can detect if it starts with <c>/w/</c> and if so we return None for the link.
+</p>
+<program language="python">
+    if mountain["link"] is None or mountain["link"].startswith("/w/"):
+      mountain["image_link"] = None
+</program>
+<p>
+  Now we run into a problem when we encounter Laila Peak (Haramosh Valley). It is always the Karakorams for some reason. Visiting that peak's page we see that it doesn't have a sidebar to the right. So the image link we look for in that page would not be found. We simply have to check to see if the sidebar exists, and error out if it doesn't. Here's the overall function:
+</p>
+<program language="python">
+def update_image_link(mountain):
+  if mountain["link"] is None or mountain["link"].startswith("/w/"):
+    mountain["image_link"] = None
+  else:
+    link =  mountain["link"]
+    if not link.startswith("https"):
+       link = base_site + link
+    http_response = httpx.get(link)
+    mObj = BeautifulSoup(http_response.text, "html.parser")
+    sidebar = mObj.find('table', class_="infobox")
+    if sidebar is None:
+        mountain["image_link"] = None
+    else:
+        img = sidebar.find('img')
+        if img is not None:
+            mountain["image_link"] = img.get("src")
+        else:
+            mountain["image_link"] = None
+</program>
+<p>
+  Congratulations! You've almost completed your first web scraping! Oh right, what is left you ask?
+</p>
+<exercise>
+  The altitudes are currently recorded as strings with a comma at the thousands place. Turn them into numbers instead.
+</exercise>
+</subsubsection>
+  <subsubsection xml:id="subsubsec-headless-browsers">
+    <title>Javascript challenges and Headless browsers</title>
+    <p>
+      While the above would suffice in the past, modern websites unfortunately make heavy use of Javascript. Javascript is a programming language that is used to change what shows up on a webpage. So for example the following page when viewed on a web browser that executed the Javascript will show very differently. Save this file with the <c>.html</c> extension and open it up on your web-browser to see a list of "dynamically generated" items:
+    </p>
+    <program language="html">
+<![CDATA[
+<html>
+      <body>
+      <script type="text/javascript">
+      for (let i = 0; i < 20; i++) {
+        const el = document.createElement("div");
+        el.innerHTML = "This is item number " + i;
+        document.body.append(el);
+      }
+      </script>
+      </body>
+</html>
+]]>
+    </program>
+    <p>
+      If we just looked at the HTML text, we would not have seen these items.
+    </p>
+    <p>
+      In order to look at the real contents of the page in a programmatic way, a common approach would be to use what is known as a <term>headless browser</term>. This is basically a program that has no graphical interface but basically behaves like a browser page, and we can programmatically control it. As it pretends to be a web browser, it will execute the Javascript normally, and thus produce the true final form of the web page. The <url href="https://playwright.dev/python/docs/library">Playwright</url> library is one such tool, and we'll now take a look on how to use it.
+    </p>
+  </subsubsection>
+</subsection>

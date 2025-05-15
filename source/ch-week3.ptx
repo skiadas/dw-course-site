@@ -5,19 +5,7 @@
   <xi:include href="sec-w3-d1.ptx" />
   <xi:include href="sec-w3-d2.ptx" />
   <xi:include href="sec-w3-d3.ptx" />
-  <section xml:id="sec-week-3-day-4">
-    <title>Thursday</title>
-    <p>
-      <ul>
-        <li>Web Scraping, Beautiful Soup</li>
-      </ul>
-    </p>
-    <p>
-      <ul>
-        <li>More Web-scraping</li>
-      </ul>
-    </p>
-  </section>
+  <xi:include href="sec-w3-d4.ptx" />
   <section xml:id="sec-week-3-day-5">
     <title>Friday</title>
     <p>

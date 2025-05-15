@@ -28,13 +28,17 @@
     To decode the ciphertext as an attacker, and if you know it is a Caesar cipher, all you need to do is try out all possible shift amounts (only 26 of them), until you see a message that makes sense. If the text is much longer you can even expedite the process by considering how frequently each letter shows up, and comparing that frequency to the frequency of letters in text from the used language.
   </p>
   <exercise>
-    Here is a ciphertext I created using a Caesar cipher: <c>PBPOXCVYDQ</c>. Write a Python program that tries out different keys, and find the secret message.
+    <p>
+      Here is a ciphertext I created using a Caesar cipher: <c>PBPOXCVYDQ</c>. Write a Python program that tries out different keys, and find the secret message.
+    </p>
   </exercise>
   <p>
     The fundamental problem with the Caesar cipher is that the keys have <term>small entropy</term>: We can easily loop through all possibilities and check which one works.
   </p>
   <exercise>
-    Phone passcodes and PIN numbers are often four digits. If someone can try one every half a second, how long would it take for them to access your phone, in the worst case?
+    <p>
+      Phone passcodes and PIN numbers are often four digits. If someone can try one every half a second, how long would it take for them to access your phone, in the worst case?
+    </p>
   </exercise>
   <paragraphs>
     <title>Symmetric Key Ciphers</title>
@@ -80,7 +84,9 @@
 <p>Some popular hash functions are MD5, SHA2 and SHA3.</p>
 <p>MD5 in particular is extensively used to validate file downloads. Though it is slowly supplanted by SHA in recent instances. A company that has released a file/executable may provide you with multiple mirrors/locations from which you can download it. But to prevent the possibility that someone might change that executable and corrupt your system they also provide you with the MD5 hash for the executable. You can then run this hash on the downloaded file before executing it, to make sure it matches what the company gave you.</p>
   <exercise>
-    Pick one of your Python files and compute its SHA256 hash by doing: <c>sha256sum filenameHere</c> You should receive as a response a long string, which is the hash. Then add a single newline character to the file and compute the sha again, and see how the new sha is completely different from before.
+    <p>
+      Pick one of your Python files and compute its SHA256 hash by doing: <c>sha256sum filenameHere</c> You should receive as a response a long string, which is the hash. Then add a single newline character to the file and compute the sha again, and see how the new sha is completely different from before.
+    </p>
   </exercise>
   </paragraphs>
   <paragraphs>
@@ -103,7 +109,9 @@
   </ol>
 </p>
   <exercise>
-    What would happen if we skip the encryption phase? Can the server simply send the document along with the hash? What can go wrong?
+    <p>
+      What would happen if we skip the encryption phase? Can the server simply send the document along with the hash? What can go wrong?
+    </p>
   </exercise>
 <p>Digital Signatures thus assure the integrity of the message. But they do allow the message to be visible to whoever sees what is going on. If confidentiality is also needed, then we can add a symmetric encryption phase to ensure that as well, though it is important to get the details right and we will not discuss this further here.</p>
   </paragraphs>
