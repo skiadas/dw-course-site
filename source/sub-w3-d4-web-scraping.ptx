@@ -87,7 +87,7 @@ bsObj.html.head.title
 <program language="python">
 bsObj.title
 </program>
-<p>The main document contents is all within the <c>&lt;body&rt;</c> tag within the <c>&lt;html&rt;</c> tag.</p>
+<p>The main document contents is all within the <c>&lt;body&gt;</c> tag within the <c>&lt;html&gt;</c> tag.</p>
 <p>Notice that what you get back is not just the text, but a <term>tag object</term>:</p>
 <program language="python">
 type(bsObj.title)
@@ -124,7 +124,7 @@ elems = [
   if tag.name is not None
 ]
 </program>
-<p>Based on these tools we can now do more complex operations. For instance notice the <q>a</q> tag inside the div tags above. It has an <q>href</q> field. We can use it to read the <q>links</q>. That's what <c>&lt;a&rt;</c> tags are, links to other pages.</p>
+<p>Based on these tools we can now do more complex operations. For instance notice the <q>a</q> tag inside the div tags above. It has an <q>href</q> field. We can use it to read the <q>links</q>. That's what <c>&lt;a&gt;</c> tags are, links to other pages.</p>
 <program language="python">
 [
   tag.a.get("href")
