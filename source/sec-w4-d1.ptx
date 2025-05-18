@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-4-day-1" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Monday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>CS229: Pandas</li>
+        <li>CS328: Intro to Flask</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w4-d1-pandas.ptx" />
+  <xi:include href="sub-w4-d1-flask.ptx" />
+</section>

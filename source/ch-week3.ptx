@@ -8,12 +8,5 @@
   <xi:include href="sec-w3-d4.ptx" />
   <section xml:id="sec-week-3-day-5">
     <title>Friday</title>
-    <p>
-      <ul>
-        <li>Pandas, Numpy</li>
-        <li>Activity: Pandas, Numpy</li>
-        <li>Activity: Duckdb with Pandas</li>
-      </ul>
-    </p>
   </section>
 </chapter>

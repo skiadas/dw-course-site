@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-pandas">
+  <title>Introduction to Pandas and data frames</title>
+  <introduction>
+    <p>
+      Pandas is a popular Python framework for working with the all too common rectangular data structures, typically referred to as data frames.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-data-frames-and-operations">
+    <title>Data Frames and their operations</title>
+    <p>
+      A <term>data frame</term> is simply a rectangular arrangement of data into rows and columns. Each <term>row</term> represents a certain common object, i.e. there is something that brings all the elements within the row together. It could be for example that each row represents a student's grade in a class, and that row will then contain the student's name, the class name, perhaps the term, and a grade. In a different data frame a row may represent a student, with information such as their overall gpa, their term, how many courses they need to graduate etc.
+    </p>
+    <p>
+      A <term>column</term> in a data frame holds the same type of data, typically representing a "measurement" or feature of the object identified by a row. For example for the student grades data frame we might have a column that contains the student names, one that contains the student grades etc. Thus each row has a <em>name</em> that helps us identify which feature of that particular row it shows. On the other hand rows don't have to have names.
+    </p>
+    <p>
+      The most common examples of data frames are the CSV file structures we have seen, and the tables in a SQL database. Pandas, along with its friends, has convenient ways to read from and write to such structures.
+    </p>
+    <p>
+      Here is a listing of common tasks we want to be able to do with data frames, which Pandas facilitates:
+      <ul>
+        <li>We want to <term>select</term> a subset of a data frame, by restricting which rows and/or which columns to consider.</li>
+        <li>We want to <term>create new columns</term> from existing columns, or possibly <term>modify columns</term>. For example turn letter grades into points, or rescale an age variable so it starts counting at age 25, stripping the <c>@hanover.edu</c> part from a column of email addresses, etc.</li>
+        <li>We want to compute summary statistics, or other kind of <term>aggregations</term>, possibly grouped by some variables.</li>
+        <li>We want to <term>reshape</term> a data frame to rearrange things, similarly to what we did with PIVOT and UNPIVOT in SQL and DuckDb.</li>
+        <li>We want to <term>combine</term> data across multiple tables. This could be a JOIN type of connection where data frames are linked across some connection between two of their columns, or it could be like a UNION where similar data frames are combined vertically.</li>
+        <li>We want to be able to produce graphical representations of the data in the data frame.</li>
+      </ul>
+      There is <url href="https://pandas.pydata.org/docs/getting_started/index.html#getting-started">extensive documentation</url> that can help you learn a whole lot about all the above, and then some. We will be merely scratching the surface.
+    </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-data-frames-in-pandas">
+    <title>Data Frames in Pandas</title>
+    <paragraphs>
+      <title>Reading data in</title>
+    <p>
+      We start with the basic question: How do we get data <em>to</em> pandas?
+      <ul>
+        <li>Many other technologies we have seen already provide their results as Pandas data frames. E.g. Neo4J with the use of <c>neo4j.Result.to_df</c>, and also DuckDb which can export its relation into a pandas data frame by <c>.df()</c>. DuckDb can also directly read from a Pandas data frame.</li>
+        <li>We can directly create a pandas data frame using methods provided by pandas.</li>
+        <li>Pandas has functions to attempt to read data from other formats, e.g. HTML tables or JSON.</li>
+      </ul>
+      Let's take a look at a combination of the basic approaches. We will imagine for this that you have the following written in a CSV file called <c>grades.csv</c>:
+    </p>
+    <program language="$">
+student,course,term,grade
+wahl,CS223,Winter 2020,D+
+wahl,CS110,Fall 2020,B+
+wahl,MAT243,Winter 2021,B+
+wahl,CS327,Winter 2021,C+
+wahl,CS323,Winter 2020,A-
+wahl,CS461,Fall 2021,A-
+skiadas,CS220,Winter 2021,C
+skiadas,CS110,Winter 2020,C
+skiadas,CS243,Fall 2021,F
+skiadas,MAT243,Winter 2021,B
+skiadas,CS327,Fall 2021,F
+skiadas,CS323,Fall 2021,C
+skiadas,CS461,Fall 2020,D
+lamarche,CS220,Fall 2020,B
+lamarche,CS223,Fall 2022,D+
+lamarche,CS110,Fall 2022,B+
+lamarche,CS243,Winter 2021,D
+lamarche,MAT243,Winter 2022,D
+lamarche,CS321,Winter 2021,D
+lamarche,CS327,Winter 2021,C-
+lamarche,CS323,Fall 2021,B
+lamarche,CS461,Fall 2020,A-
+    </program>
+    <p>
+      We can read this in pandas in any number of ways:
+    </p>
+    <program language="python">
+      import pandas as pd
+      import duckdb
+
+      # from duckdb
+      rel = duckdb.read_csv("grades.csv")
+      df1 = rel.to_df()
+      # pandas read_csv
+      df2 = pd.read_csv("grades.csv")
+      # Write to excel form, works if we install openpyxl
+      df2.to_excel("example.xlsx")
+      # From list of tuples, specify column names
+      df3 = pd.DataFrame([
+          ("A", 4.00), ("A-", 3.67),
+          ("B+", 3.33), ("B", 3.0), ("B-", 2.67),
+          ("C+", 2.33), ("C", 2.00), ("C-", 1.67),
+          ("D+", 1.33), ("D", 1.00),
+          ("F", 0.00)
+      ], columns=["letter", "points"])
+      print(df3)
+      # From list of dictionaries
+      df4 = pd.DataFrame([
+          { "letter": "A", "points": 4.00 },
+          { "letter": "A-",  "points": 3.67 },
+          { "letter": "B+",  "points": 3.33 },
+          { "letter": "B",  "points": 3.0 },
+          { "letter": "B-",  "points": 2.67 },
+          { "letter": "C+",  "points": 2.33 },
+          { "letter": "C",  "points": 2.00 },
+          { "letter": "C-",  "points": 1.67 },
+          { "letter": "D+",  "points": 1.33 },
+          { "letter": "D",  "points": 1.00 },
+          { "letter": "F", "points":  0.00 }
+      ])
+      print(df4)
+      # From a dictionary of columns
+      df5 = pd.DataFrame({
+          "letter": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F"],
+          "points": [4.00, 3.67, 3.33, 3.00, 2.67, 2.33, 2.00, 1.67, 1.33, 1.00, 0.00]
+      })
+      print(df5)
+    </program>
+    </paragraphs>
+    <paragraphs>
+      <title>Basic operations</title>
+      <p>
+        Let's look at some of the key operations in Pandas. We assume that we have a <c>grade_points</c> data frame that has the grade/letter correspondence from any of the ways above, and a <c>grades</c> data frame that has the student grades read from the csv.
+      </p>
+      <program language="python">
+        grade_points.head(2)       # top two rows
+        grade_points.tail(2)       # last two rows
+        grade_points.info()        # general info
+        grades.shape()             # Sequence or row/column sizes
+        grade_points["letter"]     # The letter column
+        grade_points["letter"][0]  # The first row letter column entry
+        grades.sort_values("grade") # reorder the rows based on a column
+      </program>
+      <p>
+        Note that the data frame is stored "by columns", keeping all the entries within a column as a single object. Each column is stored in a type called <term>Series</term>. We can also create a series directly. Series come equipped with useful functions:
+      </p>
+      <program language="python">
+        grade_points["points"].mean()    # Average of points
+        pd.Series([1, 2, 3]).sum()       # Make series manually
+        pd.Series([1, 2, 3, 1, 2]).max()
+        pd.Series([1, 2, 3, 1, 2]).describe()
+      </program>
+      <p>
+        Note that while the rows of a data frame, or a series, don't have to have names, in general, they may do so. The result of the <c>describe</c> call above is itself a Series object, and the labels we see on the left are the row names. So we can access the count, for example, by using index notation:
+      </p>
+      <program language="python">
+        r = pd.Series([1, 2, 3, 1, 2]).describe()
+        r[0]
+        r["count"]
+      </program>
+    </paragraphs>
+    <paragraphs>
+      <title>Selecting a subset</title>
+      <p>
+        Let us now consider the first of the operations we discussed earlier. We will see how we can select a subset of our data. We already saw how to select a single column. Let's look at selecting a set of columns by name:
+      </p>
+      <program language="python">
+        grades[["student", "grade"]]  # Put a list inside the [...]
+        grades[[c for c in grades.columns
+                  if c.startswith("s")]] # columns starting with s
+      </program>
+      <p>
+        It is a simple as providing a list of columns. You can also generate that list in some dynamic way from the list of provided names, as in the 2nd example above.
+      </p>
+      <p>
+        To select rows, we need to put inside the square brackets index a "boolean list/series" that indicates which rows we want to keep. These are usually generated by some expression. For example if we want to see all grade rows where the grade is "A-" we could do:
+      </p>
+      <program language="python">
+        grades[ grades["grade"] == "A-" ]
+        grades[ (grades["grade"] == "A-") |
+                (grades["grade"] == "A") ]
+        grades[ grades["grade"].isin(["A-", "A"]) ]
+      </program>
+      <p>
+        We need to work with the Series functions to achieve the desired effect, like the <c>isin</c> function here. This <url href="https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf">Pandas cheat-sheet</url> is a nice overview of many available tools.
+      </p>
+      <p>
+        We can also use the <c>.loc</c> and <c>.iloc</c> attributes to access specific entries with a <c>[row, column]</c> syntax (either by name or by number for iloc):
+      </p>
+      <program language="python">
+        grades.loc[4:7]
+        grades.loc[4:7, ["student", "grade"]]
+        grades.iloc[0:5, 0:2]
+      </program>
+      <exercise>
+        <p>Single out the grades for CS223.</p>
+        <p>Single out the B- grades for skiadas.</p>
+      </exercise>
+      <p>
+        An especially useful tool for selecting rows is the string accessor object, which allows you to specify most of the kinds of conditions you could specify from strings. For example the following allows us to pick up all the Fall terms:
+      </p>
+      <program language="python">
+        grades["term"].str.startswith("Fall")
+      </program>
+      <exercise>
+        <p>Single out all the grades from math classes.</p>
+      </exercise>
+      <p>
+        In general there are ways to express most of what you would like using some suitable query.
+      </p>
+    </paragraphs>
+    <paragraphs>
+      <title>Changing values or adding columns</title>
+      <p>
+        We can use the <c>loc</c> and <c>iloc</c> specifiers to also change existing values. For example we can change the spelling of "lamarche":
+      </p>
+      <program language="python">
+        grades.loc[grades["student"] == "lamarche", "student"] = "la-marche"
+      </program>
+      <p>
+        But perhaps the most powerful feature of pandas is its ability to do element-wise operations on a whole column and produce a new column (or replace an existing column). Think "list comprehensions", basically, but more efficient. For example, let's create new column that has split the term in period and year, and store it as a new column:
+      </p>
+      <program language="python">
+        grades["term-split"] = grades["term"].str.split()
+      </program>
+      <p>
+        So that's neat, a column can actually consist of a list of things! We can build of this. Interestingly we can use <c>.str</c> on this list, to operate on it:
+      </p>
+      <program language="python">
+        grades["period"] = grades["term-split"].str[0]
+        grades["year"] = grades["term-split"].str[1]
+      </program>
+    </paragraphs>
+    <paragraphs>
+      <title>Unions and Joins with data frames</title>
+      <p>
+        Data frames can be combined vertically (in the "union" way), by using the pandas function <c>concat</c>, which expects a list of data frames. For example we can combine the head and tail of our example set:
+      </p>
+      <program language="python">
+        pd.concat([ grades.head(2), grades.tail(2) ])
+      </program>
+      <p>
+        In order to join two tables on two specific columns, we can use merge:
+      </p>
+      <program language="python">
+        pd.merge(grades, grade_points,
+                    how="inner", left_on="grade", right_on="letter")
+      </program>
+      <p>
+        If the two column names were the same, we could have used <c>on=...</c> instead of <c>left_on</c> and <c>right_on</c>.
+      </p>
+    </paragraphs>
+  </subsubsection>
+</subsection>

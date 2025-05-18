@@ -2,19 +2,12 @@
 
 <chapter xml:id="ch-week-4" xmlns:xi="http://www.w3.org/2001/XInclude">
   <title>Week 4</title>
-  <section xml:id="sec-week-4-day-1">
-    <title>Monday</title>
-    <p>
-      <ul>
-        <li>CS229: Data transformations, aggregation</li>
-        <li>CS328: Web servers: Flask</li>
-      </ul>
-    </p>
-  </section>
+  <xi:include href="sec-w4-d1.ptx" />
   <section xml:id="sec-week-4-day-2">
     <title>Tuesday</title>
     <p>
       <ul>
+        <li>CS229: Data transformations, aggregation</li>
         <li>CS229: Data transformation: pivoting, reshaping, joining datasets</li>
         <li>CS328: Web servers: Flask testing</li>
       </ul>

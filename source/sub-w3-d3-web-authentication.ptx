@@ -2,14 +2,16 @@
 
 <subsection xml:id="subsec-authentication-onweb">
   <title>Authentication on the web</title>
-  <p>
-    There are fundamentally two ways that webservers can use to authenticate folks:
-    <ul>
-      <li><term>Local Authentication</term>, where the application itself is responsible for managing and authenticating users, most commonly a username-password combination</li>
-      <li><term>Federated Authentication</term>, where the authentication is delegated to/handled by a trusted third party</li>
-    </ul>
-    Let's examine these in more detail.
-  </p>
+  <introduction>
+    <p>
+      There are fundamentally two ways that webservers can use to authenticate folks:
+      <ul>
+        <li><term>Local Authentication</term>, where the application itself is responsible for managing and authenticating users, most commonly a username-password combination</li>
+        <li><term>Federated Authentication</term>, where the authentication is delegated to/handled by a trusted third party</li>
+      </ul>
+      Let's examine these in more detail.
+    </p>
+  </introduction>
   <subsubsection xml:id="subsubsec-local-authentication">
     <title>Local Authentication: Stored credentials</title>
 <p>Typically a username-password systems consists of the following:

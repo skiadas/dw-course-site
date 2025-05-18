@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-flask">
+  <title>Web Frameworks and Flask</title>
+  <subsubsection xml:id="subsubsec-web-Frameworks">
+    <title>Web Frameworks in General</title>
+  <p>Web servers are the programs responsible for responding to requests over the Internet. These are written in programming languages, and for most programming languages one or more <term>web frameworks</term> developed over time to help facilitate the task of creating a specific web service. Simply put, the web framework takes care of the part of running a server that is <em>the same for all services</em>, and you only have to supplement what is <em>specific to your application</em>. Here are some of the things that such a framework can help with:
+    <ul>
+      <li>You need a simple way to set up listening on a port, and delegate incoming requests to different helper functions. The framework provides that mechanism, and you provide the helper functions.</li>
+      <li>You need a way to process the information that is an HTTP request from its default wall-of-text form into more usable structures. For example, such a framework will give convenient access to the request's type, the specific URI path, the passed parameters if any, the different headers etc. We've seen the flipside of this with the httpx library, which simplifies the process of making requests.</li>
+      <li>Similarly, you need a way to create HTTP responses from the objects that you want to serve. For example: preparing a suitable status code message, including appropriate headers for the content you are trying to serve to classify it as JSON, etc. You can simply tell the framework that you want to return a dictionary as JSON, and it will take care of the rest for you.</li>
+      <li>You need to relate URL "routes" to specific functions in your application code. We'll refer to this as <term>URL dispatch</term> or <term>route dispatch</term>. For example if the route is <c>/user/skiadas</c> it would be nice if all we had to do was provide a function to "get user info" that takes an id parameter, and the system called that function passing it "skiadas" as the parameter.</li>
+      <li>If we were serving HTML pages, rather than JSON, we might need a way to use <term>templates</term> to automatically generate content. Templates are essentially instructions for generated a text file, that intermingle actual text with basic control logic (variable substitution, loops, branching), to provide reach page-construction mechanism. These template libraries exist on their own as well, but are often naturally integrated within web frameworks.</li>
+      <li>We need ways to handle standard authentication tasks, and web frameworks often have mechanisms that simplify the process.</li>
+      <li>You often need to maintain session information for a user, and some part of that process can be automated.</li>
+      <li>You need ways to be able "cache" frequent requests to save on response time, to handle incorrect route requests, logging requests, and so on. Web frameworks often provide tools that make these tasks simpler.</li>
+    </ul>
+    Some frameworks tend to be pretty opinionated about these tasks and exactly how they should be carried out, while others offer more balance and options. Some do little by themselves but allow plugins to extend the functionality.
+  </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-flask">
+    <title>Flask</title>
+    <p>
+      In Python there are many web frameworks, the most famous of which is probably Django. We are going to instead learn a smaller but easier to use framework called <term>Flask</term>. Flask takes a minimalistic approach in general. It offers some basic functionality but leaves a lot of decisions up to the user.
+    </p>
+    <p>
+      The basic mode of operation with Flask would be as follows:
+      <ul>
+        <li>Start a Flask "app" at a particular port.</li>
+        <li>Add "routes" to the app to tell it how to handle certain requests.</li>
+        <li>Optionally add handling of error requests.</li>
+      </ul>
+    </p>
+    <p>
+      Let's start with the simplest possible server, that does absolutely nothing.
+    </p>
+    <program language="python">
+      from flask import Flask
+
+      # Basic flask app that does nothing
+      app = Flask(__name__)
+    </program>
+    <p>
+      Save this in a file called <c>bank.py</c> and run it from the terminal via:
+    </p>
+    <program language="shell">
+    flask --app bank run
+    </program>
+    <p>
+      You should see an option to open up your browser, and back on the terminal you should be seeing a log that says a GET request went to the route <c>/</c> and the answer was a 404. That's because we have not told the system how to respond to <c>/</c> yet. Try to add something to the path on the browser, e.g. <c>/something</c> and you'll see a request for that path showing up on the terminal.
+    </p>
+    <p>
+      Stop the app and restart it in debug mode:
+    </p>
+    <program language="shell">
+    flask --debug --app bank run
+    </program>
+    <p>
+      Let's add a handler. We want our basic page to provide information, so we'll add the following:
+    </p>
+    <program language="python">
+      @app.get("/")
+      def sendIndexInfo():
+          return "Hello there!"
+    </program>
+    <p>
+      So we add a handler as a regular functions that returns the result. But it has an <em>annotation</em>, <c>@app.get("/")</c>, that makes the Flask app know that if someone goes to the top level (<c>/</c>) with a GET request, it should reply with this message.
+    </p>
+    <p>
+      We can also interact with this setup via httpx: Start a new terminal, run Python on it, and run:
+    </p>
+    <program language="python">
+      res = httpx.get("http://127.0.0.1:5000")
+      res.status_code
+      res.headers
+      res.text
+    </program>
+    <p>
+      Note how there were some headers created automatically for us by Flask.
+    </p>
+    <exercise>
+      <p>
+        Change your return from your function to be some JSON object like <c>{ "message": "Hello there" }</c>. How does that change the returned headers?
+      </p>
+    </exercise>
+    <p>
+      Let's kick it up a notch. Let's say we want the user to be able submit a username-password combination in a POST request, in order to sign in. We might start with the following. We can use the <c>request</c> object to read the body of the incoming request and see its details. We can also return error codes by having a second return argument (see the <c>400</c> below).
+    </p>
+    <program language="python">
+      @app.post("/")
+      def logInOrCreate():
+          body = request.get_json(force=True)
+          if "password" not in body or "username" not in body:
+              return { "error": "Need username and password" }, 400
+          # Creating an account, maybe checking if username taken
+          return { "message": "OK" }
+    </program>
+    <p>
+      With this you have most of the basics of interacting with the system. The one big piece we haven't talked about yet is <term>dynamic routes</term>. The dynamic route has one or more parts of the path that are <em>variable</em>, and are then provided as parameters to the function. For example we may a path <c>/user/skiadas</c> that is the path for the "skiadas" resource. But there is nothing special about user skiadas. So I want to be able to say "anything that looks like <c>/user/someNameHere</c>". This is exactly what a dynamic route is, and different frameworks use different syntax for it. In this case we could target those users as follows:
+    </p>
+    <program language="python">
+      @app.get("/user/&lt;string:username&gt;")
+      def getUserInfo(username):
+          return { "name": username, ...}
+    </program>
+    <p>
+      While there are more things to go over, these basics will get us started. Let's think through our API a bit first.
+    </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-designing-restful-apis">
+    <title>Designing RESTful APIs</title>
+    <p>
+      We will discuss now how to design an API, and what we have in mind is a simple banking application. When designing your API there are a few things to consider:
+      <ul>
+        <li>The biggest part is deciding what our <term>resources</term> would be. A resource is meant to be a piece of information or object that can be targeted on its own. Every such resource must have a unique URL path to identify it. On occasion it may have more than one such path.</li>
+        <li>A decision to make in that context is whether a resource is subordinate to another resource. For example the "enrollments" of a particular user may be thought of a resource subordinate to the specific "user" resource. So it may have a URL that extends the user URL, something like <c>/user/skiadas/enrollments</c>.</li>
+        <li>Another similar situation is when the totality of all resources of a certain type makes sense as its own resource. For example we may consider the "list of all users" as a resource, available at <c>/user</c>, while individual users are available at <c>/user/skiadas</c>, for example.</li>
+        <li>Once you decide on your different resources, you must then decide which methods you would accept for each, and also what authorization levels you might have for them. For example maybe everyone can see all the users, but only the user themselves can delete or modify their own entry.</li>
+        <li>This brings up the question of maintaining some kind of authentication and authorization system, to go along with the resource structure. Maybe you have a service like the movie database where everyone can access everything, but even there users can create lists and add items to them.</li>
+        <li>Another thing to decide is how different services might be discovered. One approach is that part of your return value might be links to other requests the user can make. While this is interesting, it is somewhat more advanced and we won't explore it much as an idea.</li>
+      </ul>
+    </p>
+    <p>
+      Let's think of our simple banking application in this context. I imagine the following resources:
+      <ul>
+        <li>A user/account. I am basically only allowing one account per user, for simplicity. I think I want to use paths like <c>/user/skiadas</c> for the users. a GET request will be providing general information about the user account, namely just its balance and maybe a list of transactions. You can use a PUT request on your account to change the password.</li>
+        <li>I want the "list of users", at path <c>/user</c>, as an available resource as well. I will allow everyone to be able to see the list of users using GET. One can create an account by submitting a POST request to this list.</li>
+        <li>Another resource I want to have is the concept of a <em>transaction</em> (e.g. withdrawal, deposit, transfer, etc). I am thinking these transactions stand on their own, as some may involve multiple accounts, so I imagine they have their own resource path <c>/transaction/id</c>. A GET request to such a transaction allows me to see its details.</li>
+        <li>It also makes sense to have a <c>/transaction</c> level for queries about the list of transactions. One can use a GET request to it, possibly with some filters, to see a list of transactions. I would probably want to allow different ways of ordering (e.g. date, account number, descending vs ascending), and some basic ways of querying (start/end date, specific account), and pagination. I also imagine that a POST request to this list is what you would use to create a transaction.</li>
+      </ul>
+      Let's summarize:
+    </p>
+    <tabular>
+      <col width="20%" />
+      <col width="20%" />
+      <col width="20%" />
+      <col width="20%" />
+      <col width="20%" />
+      <row header="yes">
+        <cell>Resource</cell>
+        <cell>GET</cell>
+        <cell>POST</cell>
+        <cell>PUT</cell>
+        <cell>DELETE</cell>
+      </row>
+      <row>
+        <cell><p><c>/user</c></p></cell>
+        <cell><p>All users</p></cell>
+        <cell><p>Create user or log in</p></cell>
+        <cell>N/A</cell>
+        <cell>N/A</cell>
+      </row>
+      <row>
+        <cell><p><c>/user/{name}</c></p></cell>
+        <cell><p>User details</p></cell>
+        <cell><p>N/A</p></cell>
+        <cell>Update password</cell>
+        <cell>Delete self</cell>
+      </row>
+      <row>
+        <cell><p><c>/transaction</c></p></cell>
+        <cell><p>Query transactions</p></cell>
+        <cell><p>Create transaction</p></cell>
+        <cell>N/A</cell>
+        <cell>N/A</cell>
+      </row>
+      <row>
+        <cell><p><c>/transation/{id}</c></p></cell>
+        <cell><p>Transaction details</p></cell>
+        <cell><p>N/A</p></cell>
+        <cell>N/A</cell>
+        <cell>N/A</cell>
+      </row>
+    </tabular>
+    <exercise>
+      <p>Think about your particular project and its resources, and their methods. If you have over 10 methods altogether, your scope is probably too large and should be trimmed down for the assignment purposes.</p>
+    </exercise>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-implementing-our-api-in-flask">
+    <title>Implementing our API in Flask</title>
+    <p>
+      We will now implement the above in Flask.
+    </p>
+    <paragraphs>
+      <title>Setting up the database functionality</title>
+      <p>
+        First of all, let's keep in mind that we want to back things up on a database, and if we mix the request-handling code and the database-handling code all in one place then weird things may happen. So we will place our database-handling code in a separate file, <c>db.py</c>. Let's start with the part that creates the tables if needed:
+      </p>
+      <program language="python">
+        # db.py
+        """Database module"""
+        import sqlite3
+
+        con = sqlite3.connect('banking.sqlite')
+        con.execute("""CREATE TABLE IF NOT EXISTS accounts (
+                user TEXT NOT NULL,
+                salt TEXT NOT NULL,
+                hashed_password TEXT NOT NULL,
+                deleted INT NOT NULL DEFAULT 0,
+                balance INT NOT NULL DEFAULT 0,
+                PRIMARY KEY (user)
+                )""")
+        con.execute("""CREATE TABLE IF NOT EXISTS transactions (
+                id UUID NOT NULL,
+                processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                type TEXT NOT NULL,
+                account TEXT NOT NULL,
+                other_account TEXT,
+                amount INT NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY (account) REFERENCES accounts (user),
+                FOREIGN KEY (other_account) REFERENCES accounts (user)
+                )""")
+        con.execute("""CREATE INDEX IF NOT EXISTS idx_tx_processed
+                    ON transactions (processed_at)""")
+        con.execute("""CREATE INDEX IF NOT EXISTS idx_tx_account
+                    ON transactions (account)""")
+        con.execute("""CREATE INDEX IF NOT EXISTS idx_tx_account
+                    ON transactions (other_account)""")
+      </program>
+      <p>
+        We are basically creating two tables, but only if we haven't created them already. The one holds account information, (we will use a salt and hashing for the passwords), the other holds transactions. We are also creating indexes to efficiently query transactions based on process time or account holder. Note that we have added a "deleted" entry on the user accounts. We don't want to literally remove the accounts as transaction information depends on them and we want to keep record of all transactions. So this way we will simply mark the "deleted" entry as 1 for True if we want to delete a user.
+      </p>
+      <p>
+        Now we need to add some basic methods. First we add methods to create/validate a user:
+      </p>
+      <program language="python">
+        # These 3 at the top
+        import secrets
+        from hashlib import sha256
+        from typing import Tuple
+
+        def hash(password, salt):
+            return sha256((password+salt).encode("utf-8")).hexdigest()
+
+        def add_user(username, password):
+            salt = secrets.token_bytes(16).hex()
+            hashed_password = hash(password, salt)
+            con.execute("""INSERT INTO accounts (user, salt, hashed_password) VALUES (?, ?, ?)""", (username, salt, hashed_password))
+            con.commit()
+
+        def validate_user(username, password) -&gt; Tuple[bool, str]:
+            match = con.execute("""SELECT * FROM accounts WHERE user = ?""", [username]).fetchone()
+            if match is None:
+                return False, "Unknown user"
+            (_, salt, hashed_password, delete, _) = match
+            if delete:
+                return False, "Account is deleted"
+            if hash(password, salt) != hashed_password:
+                return False, "Incorrect password"
+            return True, "OK"
+
+        def delete_user(username):
+            con.execute("""UPDATE accounts SET deleted = 1 WHERE user = ?""", [username])
+            con.commit()
+      </program>
+      <p>
+        Note how the <c>validate_user</c> method returns a pair as a result: A boolean value to indicate if the validation succeeded, and a string message for what went wrong.
+      </p>
+      <p>
+        Next we need to prepare transaction methods. We would allow 3 kinds of transactions: Deposit, withdraw, transfer. We will also have a method to check balance, which is not recorded as a transaction.
+      </p>
+      <program language="python">
+        def get_balance(username) -&gt; int | None:
+            match = con.execute("SELECT balance FROM accounts WHERE user = ?", [username]).fetchone()
+            return match[0] if match is not None else None
+
+        # Also need this at top:
+        from uuid import uuid4
+
+        def createUUID():
+            return uuid4().hex
+
+        def deposit(username, amount):
+            uuid = createUUID()
+            con.execute("INSERT INTO transactions (id, type, account, amount) VALUES (?, ?, ?, ?)", (uuid, "deposit", username, amount))
+            con.execute("UPDATE accounts set balance = balance + ? WHERE user = ?", [amount, username])
+            con.commit()
+            return uuid
+
+        def withdraw(username, amount):
+            uuid = createUUID()
+            con.execute("INSERT INTO transactions (id, type, account, amount) VALUES (?, ?, ?, ?)", (uuid, "withdraw", username, amount))
+            con.execute("UPDATE accounts set balance = balance - ? WHERE user = ?", [amount, username])
+            con.commit()
+            return uuid
+
+        def transfer(user1, user2, amount):
+            uuid = createUUID()
+            con.execute("INSERT INTO transactions (id, type, account, other_account, amount) VALUES (?, ?, ?, ? ?)", (uuid, "transfer", user1, user2, amount))
+            con.execute("UPDATE accounts set balance = balance - ? WHERE user = ?", [amount, user1])
+            con.execute("UPDATE accounts set balance = balance + ? WHERE user = ?", [amount, user2])
+            con.commit()
+            return uuid
+
+        def getTransactionInfo(tx_id):
+          return con.execute("SELECT * FROM transactions WHERE id = ?", [tx_id]).fetchone()
+        </program>
+      <p>
+        Note that we have kept application logic out of those database commands; they don't concern themselves with whether there is enough funds etc, just with carrying out the instructions. We could have put more logic there. But this is an important consideration: <em>where are you placing your key <term>application business logic</term>?</em>
+      </p>
+      <exercise>
+        <p>
+          Think through what the database module for your application may look like. Make a list of the business logic items that are NOT covered by it.
+        </p>
+      </exercise>
+    </paragraphs>
+    <paragraphs>
+      <title>Request handling</title>
+      <p>
+        With the basic database interaction out of the way for now (we'll need some more methods for when we do queries), we now shift our attention to responding to requests. Let's start by setting up a skeleton of all the queries we'll need to handle:
+      </p>
+      <program language="python">
+        from flask import Flask, request
+        import db  # Our helper module for database interactions
+
+        app = Flask(__name__)
+
+        @app.get("/")
+        def sendIndexInfo():
+            """Lists of endpoints that can be accessed."""
+            return {
+                "users": "/user",
+                "transactions": "/transaction"
+            }
+
+        @app.get("/user")
+        def getAllUsers():
+            """Return list of active users (paginated)"""
+            raise NotImplementedError
+
+        @app.post("/user")
+        def logInOrCreate():
+            """Create or log in a user."""
+            raise NotImplementedError
+
+        @app.get("/user/&lt;string:username&gt;")
+        def getUserInfo(username):
+            """Return user info (balance)"""
+            raise NotImplementedError
+
+        @app.put("/user/&lt;string:username&gt;")
+        def updatePassword(username):
+            """Update password."""
+            raise NotImplementedError
+
+        @app.delete("/user/&lt;string:username&gt;")
+        def deleteUser(username):
+            """Delete the user."""
+            raise NotImplementedError
+
+        @app.get("/transaction")
+        def getTransactions():
+            """Query transactions based on criteria"""
+            raise NotImplementedError
+
+        @app.post("/transaction")
+        def createTransaction():
+            """Create a transaction."""
+            raise NotImplementedError
+
+        @app.get("/transaction/&lt;string:id&gt;")
+        def getTransactionDetails(id):
+            """Get details of a transaction"""
+            raise NotImplementedError
+      </program>
+      <p>
+        Let's implement these, starting with the creation or logging in of a user. We first ensure the form includes username and password entries. Then we first try to validate the user (i.e. checking an attempt to log in). If that fails because the user doesn't exist then we create it. We still need to do some work to "log in" the user, and we will do that at a later point.
+      </p>
+      <program language="python">
+        @app.post("/user")
+        def logInOrCreate():
+            """Create or log in a user."""
+            body = request.get_json(force=True)
+            if "password" not in body or "username" not in body:
+                return { "message": "Need username and password" }, 400
+            # Creating an account, maybe checking if username taken
+            username, password = body["username"], body["password"]
+            ok, error = db.validate_user(username, password)
+            if ok:
+                # Valid user, logging in
+                # TODO: make a session, set cookie
+                return { "message": "OK" }
+            if error == "Unknown user":
+                # Creating account
+                db.add_user(username, password)
+                return { "message": "User created" }, 201
+            return { "message": error }, 400
+      </program>
+      <p>
+        Next let's implement a method to get info on a user. For now, everyone is allowed to ask for information about a user, and all we give back is the balance. We may later decide to also return information about the transactions of that user.
+      </p>
+      <program language="python">
+        @app.get("/user/&lt;string:username&gt;")
+        def getUserInfo(username):
+            """Return user info (balance)"""
+            balance = db.get_balance(username)
+            if balance is None:
+                return { "message": "Unknown user" }, 404
+            return { "username": username, "balance": balance }
+      </program>
+      <p>
+        We will skip the password update and delete user functionality for now. Let's work on creating a transaction.
+      </p>
+      <program language="python">
+        @app.post("/transaction")
+        def createTransaction():
+            """Create a transaction."""
+            body = request.get_json()
+            type = body.get("type") # Transaction type
+            amount = body.get("amount")
+            account = body.get("account")
+            other_account = body.get("other_account")
+            if amount is None or account is None:
+                return bad_request("Transactions must have an amount and account")
+            if type is None or type not in ["deposit", "withdraw", "transfer"]:
+                return bad_request("Transaction type must be deposit, withdraw or transfer.")
+            if type == "transfer" and other_account is None:
+                return bad_request("Transfer must include other_account.")
+            if amount &lt; 0:
+                return bad_request("Amount must be non-negative")
+            # TODO: Should check that withdrawal or transfer from account is done
+            # By currently logged in user
+            match type:
+                case "deposit": tx = db.deposit(account, amount)
+                case "withdraw": tx = db.withdraw(account, amount)
+                case "transfer": tx = db.transfer(account, other_account, amount)
+                case _: raise ValueError
+            return { "message": "Created", "id": tx }, 201
+      </program>
+      <p>
+        Phew there's quite a lot of error-checking needed, and that's not even all of it! But what it does is fairly straightforward, hopefully.
+      </p>
+    </paragraphs>
+  </subsubsection>
+</subsection>
