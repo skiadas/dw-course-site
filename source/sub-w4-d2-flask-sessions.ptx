@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-flask-sessions">
+  <title>Flask sessions</title>
+  <introduction>
+    <p>
+      In this section we will look at how to store user login information using a session.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-sessions">
+    <title>Sessions</title>
+    <p>
+      In order to maintain information when the user "logs in", we can employ the standard approach of sessions. The main idea is as follows:
+      <ul>
+        <li>When a user visits and "logs in", we create a "session" and  record their username, login status, possibly some unique id, and possibly the timestamp.</li>
+        <li>We create a cookie from this information, and encode it with some secret key. Then we send a "set-cookie" header instructing the client to send us this cookie back.</li>
+        <li>When the client sends a followup request, they are expected to include this cookie. We can then decode it and look inside to find the expected information.</li>
+        <li>If we want to be able to log people out after a period of inactivity, then we must record and update the timestamp on every call, and hence issue a new cookie if the timestamp is part of that information.</li>
+        <li>If we want to store more information than can fit in a cookie (cookies have some strong limitations), then we can simply store a session id in the cookie, then use that id to store information in a sqlite3 table or something similar (can also use a duckdb in memory database perhaps, or other more specialized cache tools).</li>
+      </ul>
+      The Flask framework will take care of the cookie exchange for us. But anything else we want to do with a session will be up to us.
+    </p>
+    <p>
+      Let's see how we can start a simple session setup. The first thing we need is to import the <c>session</c> object, then modify the login process to remember things.
+    </p>
+    <program language="python">
+      from flask import Flask, request, session
+      # somewhere early on
+      app.secret_key = "randomstuffhere" # Use secrets to generate
+
+      #...
+      @app.post("/user")
+      def logInOrCreate():
+          """Create or log in a user."""
+          body = request.get_json(force=True)
+          if "password" not in body or "username" not in body:
+              return { "message": "Need username and password" }, 400
+          # Creating an account, maybe checking if username taken
+          username, password = body["username"], body["password"]
+          ok, error = db.validate_user(username, password)
+          if ok:
+              # Valid user, logging in
+              session["username"] = username
+              return { "message": "OK" }
+          if error == "Unknown user":
+              # Creating account
+              db.add_user(username, password)
+              return { "message": "User created" }, 201
+          return { "message": error }, 400
+    </program>
+    <p>
+      So for now all we'll remember is the username. Make a login request now and see what headers the system sends back.
+    </p>
+    <program language="shell">
+      cl = httpx.Client(base_url = "http://127.0.0.1:5000")
+      r = cl.post("/user", json={ "username": "skiadas", "password": "something" })
+      r.headers # see the set-cookie part
+      # The client will automatically send the cookie back on future requests
+    </program>
+    <p>
+      In order to check this worked, let's make it so that only the user can see their balance:
+    </p>
+    <program language="python">
+      @app.get("/user/&lt;string:username&gt;")
+      def getUserInfo(username):
+          """Return user info (balance)"""
+          if username != session.get("username"):
+              return { "message": "You cannot view other people's balance" }, 403
+          balance = db.get_balance(username)
+          if balance is None:
+              return { "message": "Unknown user" }, 404
+          return { "username": username, "balance": balance }
+    </program>
+    <p>
+      To test this, let us create a second client:
+    </p>
+    <program language="python">
+      cl2 = httpx.Client(base_url = "http://127.0.0.1:5000")
+      cl2.post("/user", json={ "username": "wahl", "password": "mypass" })
+      # Now log in
+      cl2.post("/user", json={ "username": "wahl", "password": "mypass" })
+      cl2.get("/user/wahl") # ok
+      cl2.get("/user/skiadas") # error
+    </program>
+    <p>
+      Now we need to add protections. clients who have not logged in yet should only be allowed to do: POST on /user, GET on /user, and GET on /. So we effectively want to check on almost every method that there is a logged in user. That sounds like a lot of work duplication. What we need is a way to tell Flask "run this before every request". We can do this with a decorator:
+    </p>
+    <program language="python">
+      @app.before_request
+      def requireLogin():
+          if request.path not in ["/", "/user"]:
+              if session.get("username") is None:
+                  return { "message": "Must log in" }, 401
+    </program>
+    <p>
+      This function will now run before every quest. We could probably also just manually call it from wherever we need it, but this is a neat way to do it. We can imagine other similar functions that run before each request, whose job it is to do similar setup work (for example updating a session timestamp or invalidating a session if it's been on for too long).
+    </p>
+  </subsubsection>
+</subsection>

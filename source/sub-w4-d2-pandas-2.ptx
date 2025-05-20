@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<subsection xml:id="subsec-pandas-2">
+  <title>More Pandas</title>
+  <introduction>
+    <p>
+      In this section we will use Pandas to look at a dataset, practice a bit what we learned last time, then see some new stuff in terms of graphing etc.
+    </p>
+  </introduction>
+  <subsubsection xml:id="subsubsec-loading-alcohol-data">
+    <title>Loading the alcohol consumption data</title>
+    <p>
+      We are going to load the alcohol consumption dataset collected and described <url href="https://dasl.datadescription.com/datafile/alcohol_consumption_2024/?_sfm_cases=3000+118720">here</url>. The actual file has the URL <c>https://dasl.datadescription.com/download/data/3957</c> and we'll try to use this directly.
+    </p>
+    <program language="python">
+      import pandas as pd
+      pd.read_csv("https://dasl.datadescription.com/download/data/3957")
+    </program>
+    <p>
+      If we look at the results we will see that it didn't read in quite right, as it uses tab separators (<c>\t</c>) instead of commas, so it read everything as one entry. We re-read it specifying a <c>sep=</c> entry:
+    </p>
+    <program language="python">
+      import pandas as pd
+      alcohol = pd.read_csv("https://dasl.datadescription.com/download/data/3957", sep="\t")
+      alcohol.shape
+      alcohol.info()
+    </program>
+    <p>
+      We see there are 16 columns in the data and a total of 11872 observations. Each row records information for a particular year, a particular area code (using the FIPS code standard), a particular beverage, how many gallons of the beverage were consumed, how much ethanol that was, the population aged 14 or higher, a per-capita amount of ethanol, and some more stuff. Let's start by taking a closer look at the Beverage, Year and Code variables:
+    </p>
+    <program language="python">
+       alcohol["Beverage"].describe()
+       # 4 different values. all appear 2968 times.
+       4 * 2968  # 11872
+       alcohol["Year"].astype(str).describe() # have to turn numeric to string
+       53 * 224  # 11872.  53 different years
+       alcohol["Area ID"].astype(str).describe()
+       56 * 212  # 11872.  56 different "states"
+       alcohol["Area ID"].unique()
+       53 * 56 * 4   # One row per year-state-beverage combination
+    </program>
+    <p>
+      So we can see that there are is one row corresponding to each year, state and beverage combination. States are identified by their FIPS code, and it would be great if we could get real state names (or alphabetical codes) attached. We can find those <url href="https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code">here as an example</url>. We will use Pandas' <c>read_html</c> function. What it does is look through all tables in the provided page, and returns a list with one dataframe from each table. We can then index into this list to get the one we want:
+    </p>
+    <program language="python">
+      codes = pd.read_html("https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code")[0]
+      codes
+      alcohol = pd.merge(alcohol, codes[["Name", "Alpha code", "Numeric code"]],
+                how="left", left_on="Area ID", right_on="Numeric code")
+    </program>
+    <p>
+      Neat! now we have the state code columns in! There are a few entries with FIPS code 91-99 that we will leave out later as they don't correspond to the normal states, but we've kept them in for now by using <c>how="left"</c>.
+    </p>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-reshaping-the-data">
+    <title>Reshaping the data</title>
+    <p>
+      One of the powerful ideas in data wrangling is that of reshaping your data to meet a certain goal. For example suppose we want to compare consumption of various beverages for just two specific states. So we start by using subsets to cut down to the variables we want to look at.
+    </p>
+    <program language="python">
+      # Indiana and Kentucky
+      ind_ken = alcohol[ alcohol["Name"].isin(["Indiana", "Kentucky"]) ][ ["Alpha code", "Year", "Beverage", "Gal Ethanol per capita.21+"] ]
+    </program>
+    <p>
+      That is a good starting point, but it doesn't let us directly compare Indiana and Kentucky. For that to work well, we would like to see the "Gal ethanol per capita" column split in two, one containing an Indiana value and another containing the corresponding Kentucky value for the same year and same beverage type. We basically want to PIVOT the "Alpha code" column onto multiple columns, using the "gal ethanol" column for the values. We will end up with a dataset with half the rows, but with an extra column.
+    </p>
+    <p>
+      NOTE: The data as we currently have it is in what is known as <term>tidy form</term>: Every variable has its own column. After we do the conversion this will not be as true any more: The "gal ethanol" variable/measurement will have spilled over two columns. It is good to start with your data in tidy form, or bring it to that form, then transform it from there.
+    </p>
+    <p>
+      To transform the data, we in fact use a function called <em>pivot</em>:
+    </p>
+    <program language="python">
+      ik_pivot = ind_ken.pivot(
+        columns="Alpha code",
+        values="Gal Ethanol per capita.21+",
+        index=["Year", "Beverage"])
+    </program>
+    <p>
+      You should see here that the year and beverage entries became what Pandas calls a "multi-index", helping us identify specific rows. So we have a unique row for each year/beverage combination. We can turn those indexes back into columns by using <em>reset_index</em>:
+    </p>
+    <program language="python">
+      ik_pivot = ik_pivot.reset_index()
+      # If we wanted that index back:
+      ik_pivot.set_index(["Year", "Beverage"])
+    </program>
+  </subsubsection>
+  <subsubsection xml:id="subsubsec-pandas-graphs">
+    <title>Pandas graphs</title>
+    <p>
+      Pandas provides a convenient way to draw graphs from given data, using the Matplotlib package under the hood. You can find some handy <url href="https://matplotlib.org/cheatsheets/">Matplotlib cheatsheets</url> online to get an idea of what can be done. Typically you create a graph by specifying:
+      <ul>
+        <li>What type of graph to generate</li>
+        <li>What variables to show in the graph and what each corresponds to (or let it use them all and guess on its own)</li>
+        <li>Other details (custom title, etc)</li>
+      </ul>
+      We typically access most of those with the <c>.plot</c> function/property. The resulting object has a <c>.figure</c> property that we can use to manipulate the resulting figure. On a desktop we can use <c>.show()</c> to just see it, or save it to a file via <c>.savefig(...)</c>
+    </p>
+    <program language="python">
+      plot = ik_pivot[ ik_pivot["Beverage"] == "Beer" ][ ["Year", "IN", "KY"]].set_index("Year").plot()
+      plot.figure.show()  # On your local computer
+      plot.figure.savefig("example.png")
+    </program>
+    <p>
+      Let's do a more complicated example now. We want to show in the same graph beer, wine and spirits. One way to do that is to use multiple columns when we pivot (notice the columns):
+    </p>
+    <program language="python">
+      pivot2 = ind_ken[ ind_ken["Beverage"] != "All beverages" ].pivot(
+                columns=["Beverage", "Alpha code"],
+                values="Gal Ethanol per capita.21+",
+                index="Year")
+      pivot2.plot().figure.savefig("example.png")
+    </program>
+    <p>
+      While this is not bad, it would be nice if we could control the coloring more, so that it uses one color per state. We can do it by manually specifying the colors. As there are 6 colors total we can provide corresponding colors
+    </p>
+    <program language="python">
+      pivot2 = ind_ken[ ind_ken["Beverage"] != "All beverages" ].pivot(
+                columns=["Beverage", "Alpha code"],
+                values="Gal Ethanol per capita.21+",
+                index="Year")
+      colors = pivot2.columns.map( lambda x: x[1]).map({ "IN": "blue", "KY": "red" })
+      pivot2.plot(color=colors).figure.savefig("example.png")
+    </program>
+    <p>
+      Not bad, but the legend should really not contain colors multiple times. There are a few ways to approach this, but one way is to add the lines one at a time.
+    </p>
+    <program language="python">
+      from matplotlib.pyplot import plt
+      fig, ax = plt.subplots()   # Start an empty figure
+      colors = { "IN": "blue", "KY": "red" }
+      styles = { "Beer": "solid", "Wine": "dotted", "Spirits": "dashed" }
+      for state in ["IN", "KY"]:
+        for bev in ["Beer", "Wine", "Spirits"]:
+          ind_ken[ (ind_ken["Alpha code"] == state) &amp;
+                    (ind_ken["Beverage"] == bev)].plot(
+                      x="Year",
+                      y="Gal Ethanol per capita.21+",
+                      ax=ax,
+                      color = colors[state],
+                      linestyle = styles[bev]
+                    )
+
+      fig.show()
+    </program>
+    <p>
+      That looks great! But it doesn't have a proper legend. We can create a legend manually, but we need something from matplotlib:
+    </p>
+    <program language="python">
+      from matplotlib.lines import Line2D
+      # Put this before the plot
+      fig.legend([
+        Line2D([0], [0], color="blue"),
+        Line2D([0], [0], color="red"),
+        Line2D([0], [0], color="black", linestyle="solid"),
+        Line2D([0], [0], color="black", linestyle="dotted"),
+        Line2D([0], [0], color="black", linestyle="dashed"),
+      ], [
+        "IN", "KY",
+        "Beer", "Wine", "Spirits"
+      ])
+    </program>
+    <p>
+      That's not too bad. Let's solve the same problem in a different way. We will only show IN and KY in the legend, but then we will write Beer, Wine or Spirits in text in the middle of the corresponding graphs. To do that we'll need to get the average values for each. This is a good opportunity to aggregate:
+    </p>
+    <program language="python">
+      # Add before the fig.show()
+      means = ind_ken.groupby("Beverage").aggregate({
+        "Gal Ethanol per capita.21+": "mean",
+        "Year": "mean"
+      }).reset_index()
+    </program>
+    <p>
+      So we first specify how we want to group things up, then we specify how we want to <em>reduce</em> all those values to a single value. So now what we want to do is add in our graphs text labels at those locations.
+    </p>
+    <program language="python">
+      # Add before fig.show()
+      for i in range(1, 4):
+          ax.text(means.at[i, "Year"], means.at[i, "Gal Ethanol per capita.21+"], means.at[i, "Beverage"], ha='center', fontsize=14, weight="bold")
+    </program>
+    <p>
+      Obviously lots more we can do, this shows some of the possibilities.
+    </p>
+    <exercise>
+      <p>Generate a similar graph but for 3 states of your choosing.</p>
+    </exercise>
+    <exercise>
+      <p>Change the colors used.</p>
+    </exercise>
+    <exercise>
+      <p>Move the text annotations to the left side.</p>
+    </exercise>
+  </subsubsection>
+</subsection>

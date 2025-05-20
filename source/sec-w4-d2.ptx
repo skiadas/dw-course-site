@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<section xml:id="sec-week-4-day-2" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Tuesday</title>
+  <introduction>
+    <p>
+      <ul>
+        <li>CS229: Data transformations, aggregation</li>
+        <li>CS229: Data transformation: pivoting, reshaping, joining datasets</li>
+        <li>CS328: Web servers: Flask testing</li>
+      </ul>
+    </p>
+  </introduction>
+  <xi:include href="sub-w4-d2-pandas-2.ptx" />
+  <xi:include href="sub-w4-d2-flask-sessions.ptx" />
+</section>
